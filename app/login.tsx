@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Link } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -9,6 +9,9 @@ export default function LoginPage() {
 
   return (
     <View style={styles.container}>
+      {/* Logo */}
+      <Image source={require('@/assets/images/logo.png')} style={styles.logo}  />
+
       {/* Title */}
       <Text style={styles.title}>Welcome Back!</Text>
       <Text style={styles.subtitle}>Log in to continue ordering fresh food.</Text>
@@ -59,8 +62,16 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
     backgroundColor: '#fff',
+  },
+  logo: {
+    width: 300,
+    height: 300,
+    marginBottom: -70,
+    resizeMode: 'contain', // Ensures it fits nicely
   },
   title: {
     fontSize: 24,

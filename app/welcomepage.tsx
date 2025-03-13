@@ -7,9 +7,9 @@ export default function WelcomePage() {
     <View style={styles.container}>
       {/* Logo */}
       <Image
-        source={require('@/assets/images/Designer-2.jpeg') } // Replace with your actual image path
+        source={require('@/assets/images/logo.png') } // Replace with your actual image path
         style={styles.logo}
-        resizeMode="center"
+        resizeMode="cover"
       />
 
       {/* Tagline */}
@@ -34,9 +34,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 300,
+    height: 300,
     marginBottom: 30,
+    resizeMode: 'contain', // Ensures it fits nicely
   },
   tagline: {
     fontSize: 18,

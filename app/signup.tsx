@@ -10,6 +10,8 @@ export default function SignUpPage() {
 
   return (
     <View style={styles.container}>
+      {/* Logo */}
+      <Image source={require('@/assets/images/logo.png')} style={styles.logo}  />
       {/* Title */}
       <Text style={styles.title}>Create Account</Text>
       <Text style={styles.subtitle}>Create your account to start ordering fresh food!</Text>
@@ -66,10 +68,22 @@ export default function SignUpPage() {
 }
 
 const styles = StyleSheet.create({
+  
   container: {
+    // flex: 1,
+    // padding: 20,
+    // backgroundColor: '#fff',
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
     backgroundColor: '#fff',
+  },
+  logo: {
+    width: 300,
+    height: 300,
+    marginBottom: -70,
+    resizeMode: 'contain', // Ensures it fits nicely
   },
   title: {
     fontSize: 24,
