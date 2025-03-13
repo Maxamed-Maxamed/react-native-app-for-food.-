@@ -69,15 +69,23 @@ export default function SignUpPage() {
 
 const styles = StyleSheet.create({
   
+  // container: {
+  //   flex: 1,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   padding: 20,
+  //   backgroundColor: '#fff',
+  // },
+  
+  /* Container */
   container: {
-    // flex: 1,
-    // padding: 20,
-    // backgroundColor: '#fff',
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#fff',
+    paddingTop: 20,
+    paddingBottom: 90,
   },
   logo: {
     width: 300,
