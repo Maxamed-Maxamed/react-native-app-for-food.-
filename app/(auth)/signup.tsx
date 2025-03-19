@@ -1,14 +1,34 @@
 import { useState } from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { Link, router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-
+import { signup } from '@/services/firebase';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
-  
+
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (!agreeTerms) {
+      Alert.alert('Error', 'Please agree to Terms & Conditions');
+      return;
+    }
+
+    try {
+      const user = await signup(email, password);
+      if (user) {
+        router.replace('/(auth)/login');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -54,8 +74,8 @@ export default function SignUpPage() {
         <Text style={styles.checkboxText}>I agree with Terms & Conditions</Text>
       </TouchableOpacity>
 
-      {/* Sign Up Button */}
-      <TouchableOpacity style={styles.button}>
+      {/* Sign Up Button - update the onPress handler */}
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 

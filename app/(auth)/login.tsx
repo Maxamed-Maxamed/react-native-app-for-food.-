@@ -1,11 +1,28 @@
 import { useState } from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { Link, router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { login } from '@/services/firebase';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    try {
+      const user = await login(email, password);
+      if (user) {
+        router.replace('/(tabs)/dashboard');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -41,8 +58,8 @@ export default function LoginPage() {
         />
       </View>
 
-      {/* Log In Button */}
-      <TouchableOpacity style={styles.button}>
+      {/* Log In Button - update the onPress handler */}
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Log In</Text>
       </TouchableOpacity>
 
