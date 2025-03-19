@@ -5,8 +5,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import WelcomePage from './welcomepage';
-
+import 'react-native-gesture-handler';
+import 'react-native-screens';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 
@@ -38,14 +38,10 @@ export default function RootLayout() {
           name="welcomepage"
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="signup"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="login"
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} /> 
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+       
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

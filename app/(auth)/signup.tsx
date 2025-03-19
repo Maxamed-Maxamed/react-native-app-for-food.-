@@ -3,18 +3,18 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { Link } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   return (
     <View style={styles.container}>
       {/* Logo */}
       <Image source={require('@/assets/images/logo.png')} style={styles.logo}  />
-
       {/* Title */}
-      <Text style={styles.title}>Welcome Back!</Text>
-      <Text style={styles.subtitle}>Log in to continue ordering fresh food.</Text>
+      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.subtitle}>Create your account to start ordering fresh food!</Text>
 
       {/* Email Input */}
       <View style={styles.inputContainer}>
@@ -41,31 +41,43 @@ export default function LoginPage() {
         />
       </View>
 
-      {/* Log In Button */}
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Log In</Text>
+      {/* Terms Checkbox */}
+      <TouchableOpacity
+        style={styles.checkboxContainer}
+        onPress={() => setAgreeTerms(!agreeTerms)}
+      >
+        <View style={[styles.checkbox, agreeTerms && styles.checked]}>
+          {agreeTerms && <MaterialIcons name="check" size={14} color="#fff" />}
+        </View>
+        <Text style={styles.checkboxText}>I agree with Terms & Conditions</Text>
       </TouchableOpacity>
 
-      {/* Sign Up Link */}
-      <View style={styles.signUpContainer}>
-        <Text style={styles.signUpText}>Don't have an account? </Text>
-        <Link href="/signup" asChild>
-          <TouchableOpacity>
-            <Text style={styles.signUpLink}>Sign Up</Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
+      {/* Sign Up Button */}
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonText}>Sign Up</Text>
+      </TouchableOpacity>
+
+      {/* Log In Link */}
+      <Link href="/login" asChild>
+        <TouchableOpacity>
+          <Text style={styles.loginText}>Already have an account? Log In</Text>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  
+  /* Container */
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#fff',
+    paddingTop: 20,
+    paddingBottom: 90,
   },
   logo: {
     width: 300,
@@ -102,8 +114,32 @@ const styles = StyleSheet.create({
     height: 50,
     fontFamily: 'Poppins_400Regular',
   },
-  button: {
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: '#666',
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  checked: {
     backgroundColor: '#800080',
+    borderColor: '#800080',
+  },
+  checkboxText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
+    color: '#666',
+  },
+  button: {
+    backgroundColor: '#000080',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -113,17 +149,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
   },
-  signUpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  signUpText: {
-    color: '#666',
-    fontFamily: 'Poppins_400Regular',
-  },
-  signUpLink: {
+  loginText: {
     color: '#800080',
     fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });

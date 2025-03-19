@@ -1,6 +1,5 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Link } from 'expo-router';
-import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 
 export default function WelcomePage() {
   return (
@@ -13,7 +12,7 @@ export default function WelcomePage() {
       />
 
       {/* Tagline */}
-      <Text style={styles.tagline}>Enjoy fresh food delivered right to your door.</Text>
+      <Text style={styles.tagline} >Enjoy fresh food delivered right to your door.</Text>
 
       {/* Get Started Button */}
       <Link href="/signup" asChild>
