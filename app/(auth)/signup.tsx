@@ -3,10 +3,12 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { Link } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
+
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
+  
 
   return (
     <View style={styles.container}>
@@ -74,10 +76,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 10,
     backgroundColor: '#fff',
-    paddingTop: 20,
-    paddingBottom: 90,
+    paddingTop: -20,
+    paddingBottom: -30,
   },
   logo: {
     width: 300,
