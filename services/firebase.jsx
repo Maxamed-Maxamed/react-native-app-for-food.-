@@ -33,7 +33,7 @@ const auth = initializeAuth(app, {
 });
 
 // Initialize auth state listener
-onAuthStateChanged(auth, (user: User | null) => {
+onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("User detected:", user.email);
         // You can manually store user info in AsyncStorage here if needed
@@ -50,7 +50,7 @@ export default app;
 export { asyncStorage };
 
 // signup.tsx functions go here
-export const signup = async (email: string, password: string) => {
+export const signup = async (email, password) => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         return userCredential.user;
@@ -60,7 +60,7 @@ export const signup = async (email: string, password: string) => {
 };
 
 // login.tsx functions go here
-export const login = async (email: string, password: string) => {
+export const login = async (email, password) => {
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         return userCredential.user;
