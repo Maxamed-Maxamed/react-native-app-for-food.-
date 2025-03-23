@@ -1,12 +1,19 @@
 import { initializeApp } from 'firebase/app';
-import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { 
+    createUserWithEmailAndPassword, 
+    getAuth, 
+    signInWithEmailAndPassword, 
+    signOut,
+
+    onAuthStateChanged,
+    User,
+    initializeAuth,
+    getReactNativePersistence
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import { initializeAuth } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -16,26 +23,33 @@ const firebaseConfig = {
     messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
     measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
-    
-    };
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const asyncStorage = ReactNativeAsyncStorage;
-    const authStorage = AsyncStorage;
-    
-    
-    export { auth, db }; 
+const app = initializeApp(firebaseConfig);
 
-    export const storage = getStorage(app);
-    export const functions = getFunctions(app);
-    export default app;
-    export { asyncStorage, authStorage };
+// Initialize auth with AsyncStorage persistence
+const auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 
+// Initialize auth state listener
+onAuthStateChanged(auth, (user: User | null) => {
+    if (user) {
+        console.log("User detected:", user.email);
+        // You can manually store user info in AsyncStorage here if needed
+    }
+});
 
-    // signup.tsx functions go here 
+const db = getFirestore(app);
+const asyncStorage = ReactNativeAsyncStorage;
 
+export { auth, db };
+export const storage = getStorage(app);
+export const functions = getFunctions(app);
+export default app;
+export { asyncStorage };
+
+// signup.tsx functions go here
 export const signup = async (email: string, password: string) => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -55,7 +69,6 @@ export const login = async (email: string, password: string) => {
     }
 };
 
-
 // logout.tsx functions go here 
 export const logout = async () => {
     try {
@@ -64,4 +77,3 @@ export const logout = async () => {
         return error;
     }
 };
-
