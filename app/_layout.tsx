@@ -36,14 +36,14 @@ export default function RootLayout() {
           await auth.authStateReady( ) ; // Use the method on auth instance
           const unsubscribe = onAuthStateChanged(auth, (user) => {
               if (user) {
-                  router.replace('/(tabs)/dashboard');
+                  router.replace('/(tabs)/home');
               } else {
                   router.replace('/login');
               }
           });
           return unsubscribe;
       };
-
+  
       const unsubscribePromise = initializeAuth();
       
       return () => {

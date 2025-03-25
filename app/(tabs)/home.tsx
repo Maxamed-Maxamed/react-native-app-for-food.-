@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { auth } from '@/services/firebase';
 import { router } from 'expo-router';
 
-export default function DashboardScreen() {
+export default function HomeScreen() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
@@ -16,7 +16,7 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Text>dashboard</Text>
+      <Text>home</Text>
     </View>
   );
 }

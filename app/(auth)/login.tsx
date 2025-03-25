@@ -8,21 +8,22 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Only showing the part that needs to be changed
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    try {
-      const user = await login(email, password);
-      if (user) {
-        router.replace('/(tabs)/dashboard');
+      if (!email || !password) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
+  
+      try {
+        const user = await login(email, password);
+        if (user) {
+          router.replace('/(tabs)/home');
+        }
+      } catch (error: any) {
+        Alert.alert('Error', error.message);
+      }
+    };
 
   return (
     <View style={styles.container}>
