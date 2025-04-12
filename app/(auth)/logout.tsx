@@ -1,11 +1,11 @@
 import { StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { logout } from '@/services/firebase';
+import { signOutUser } from '@/services/firebase';  // Update this import
 
 export default function LogoutScreen() {
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOutUser();  // Update this function call
       router.replace('/login');
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -16,6 +16,7 @@ export default function LogoutScreen() {
     <View style={styles.container}>
       <TouchableOpacity style={styles.button} onPress={handleLogout}>
         <Text style={styles.buttonText}>Logout</Text>
+        
       </TouchableOpacity>
     </View>
   );

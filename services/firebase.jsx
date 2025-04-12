@@ -1,20 +1,23 @@
 import { initializeApp } from 'firebase/app';
 import { 
     createUserWithEmailAndPassword, 
-    getAuth, 
-    signInWithEmailAndPassword, 
     signOut,
-
+    signInWithEmailAndPassword, 
     onAuthStateChanged,
     User,
     initializeAuth,
-    getReactNativePersistence
+    getReactNativePersistence,
+    getAuth, 
+    signInWithCredential,
+    signInWithPopup,
+    GoogleAuthProvider,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Google from 'expo-auth-session/providers/google';
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -76,4 +79,81 @@ export const logout = async () => {
     } catch (error) {
         return error;
     }
+};
+
+// Google login function
+// Renamed from signInWithEmailAndPassword to loginWithEmail to avoid naming conflict
+export const loginWithEmail = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      // Save user info to AsyncStorage if needed
+      await AsyncStorage.setItem('user', JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+      }));
+      return user;
+    } catch (error) {
+      throw error;
+    }
+};
+
+  // Function for Google Sign In
+export const signInWithGoogle = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        await AsyncStorage.setItem('user', JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        }));
+        return user;
+      } else {
+        // For native platforms, use Expo AuthSession
+        const clientId = process.env.GOOGLE_WEB_CLIENT_ID;
+        
+        const [, response, promptAsync] = Google.useAuthRequest({
+          clientId,
+          iosClientId: process.env.GOOGLE_IOS_CLIENT_ID,
+          androidClientId: process.env.GOOGLE_ANDROID_CLIENT_ID,
+        });
+        if (response?.type === 'success') {
+            const { id_token } = response.params;
+            const credential = GoogleAuthProvider.credential(id_token);
+            const result = await signInWithCredential(auth, credential);
+            const user = result.user;
+            await AsyncStorage.setItem('user', JSON.stringify({
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+            }));
+            return user;
+          }
+          
+          return await promptAsync();
+        }
+      } catch (error) {
+        throw error;
+      }
+    };
+
+// Function to sign out
+export const signOutUser = async () => {
+  try {
+    await auth.signOut();
+    await AsyncStorage.removeItem('user');
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Function to get current user
+export const getCurrentUser = async () => {
+    const userJson = await AsyncStorage.getItem('user');
+    return userJson ? JSON.parse(userJson) : null;
 };
