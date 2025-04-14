@@ -1,24 +1,29 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
-  Image, 
-  KeyboardAvoidingView, 
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Alert,
   Dimensions,
   SafeAreaView,
   ScrollView,
-
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
-import { loginWithEmail, signInWithGoogle } from '@/services/firebase';
+import { loginWithEmail, auth } from '@/services/firebase';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+
+// Complete any auth sessions when the app returns from the authentication flow
+WebBrowser.maybeCompleteAuthSession();
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,6 +32,54 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Set up Google Auth Request
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  });
+  
+  // Handle Google Sign In response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      setLoading(true);
+      // Fix the access to idToken
+      // Extract ID token from the response
+      const idToken = response?.authentication?.idToken || response?.params?.id_token;
+
+      // Log the response for debugging purposes
+      console.log("AuthSession response:", response);
+
+      // Log the extracted ID token
+      if (idToken) {
+        console.log("Extracted ID token:", idToken);
+      } else {
+        console.warn("No ID token found in the response. Check the response structure.");
+      }
+      
+      // Check if idToken exists before proceeding
+      if (idToken) {
+        const credential = GoogleAuthProvider.credential(idToken);
+        signInWithCredential(auth, credential)
+          .then((result) => {
+            console.log("Google sign in successful");
+            router.replace('/(tabs)');
+          })
+          .catch((error) => {
+            console.error("Error signing in with Google:", error);
+            Alert.alert('Google Sign In Failed', error.message);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } else {
+        console.error("No ID token found in authentication response");
+        Alert.alert('Authentication Error', 'Failed to get authentication token from Google');
+        setLoading(false);
+      }
+    }
+  }, [response]);
   
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -56,14 +109,11 @@ export default function Login() {
   };
 
   const handleGoogleSignIn = async () => {
-    setLoading(true);
     try {
-      await signInWithGoogle();
-      router.replace('/(tabs)');
-    } catch (error: any) {
-      Alert.alert('Google Sign In Failed', error.message);
-    } finally {
-      setLoading(false);
+      await promptAsync();
+    } catch (error) {
+      console.error("Error starting Google auth:", error);
+      Alert.alert('Google Sign In Error', 'Could not start the Google authentication process.');
     }
   };
 

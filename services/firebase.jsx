@@ -15,9 +15,14 @@ import {
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native'; 
+
+// Make sure to register your scheme and client IDs
+WebBrowser.maybeCompleteAuthSession();
+
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -26,13 +31,13 @@ const firebaseConfig = {
     messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
     measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
+  };
 
 const app = initializeApp(firebaseConfig);
 
 // Initialize auth with AsyncStorage persistence
 const auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+    persistence: getReactNativePersistence(AsyncStorage)
 });
 
 // Initialize auth state listener
@@ -44,13 +49,10 @@ onAuthStateChanged(auth, (user) => {
 });
 
 const db = getFirestore(app);
-const asyncStorage = ReactNativeAsyncStorage;
-
 export { auth, db };
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
 export default app;
-export { asyncStorage };
 
 // signup.tsx functions go here
 export const signup = async (email, password) => {
@@ -63,14 +65,7 @@ export const signup = async (email, password) => {
 };
 
 // login.tsx functions go here
-export const login = async (email, password) => {
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        return userCredential.user;
-    } catch (error) {
-        return error;
-    }
-};
+// Removed redundant login function to avoid confusion
 
 // logout.tsx functions go here 
 export const logout = async () => {
@@ -100,47 +95,61 @@ export const loginWithEmail = async (email, password) => {
 
   // Function for Google Sign In
 export const signInWithGoogle = async () => {
-    try {
-      if (Platform.OS === 'web') {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        await AsyncStorage.setItem('user', JSON.stringify({
+  try {
+    if (Platform.OS === 'web') {
+      // Web platform approach
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      await AsyncStorage.setItem('user', JSON.stringify({
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-        }));
-        return user;
-      } else {
-        // For native platforms, use Expo AuthSession
-        const clientId = process.env.GOOGLE_WEB_CLIENT_ID;
+      }));
+      return user;
+    } else {
+      // For Expo on mobile, use the current authentication approach
+      await Google.initializeAsync({
+        clientId: Platform.OS === 'ios'
+          ? process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+          : process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      });
+      
+      const { type, user } = await Google.promptAsync({
+        clientId: Platform.OS === 'ios'
+          ? process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+          : process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        scopes: ['profile', 'email'],
+        redirectUri: `${process.env.SCHEME}://`
+      });
+      
+      if (type === 'success') {
+        const { id_token } = user;
+        const credential = GoogleAuthProvider.credential(id_token);
+        const result = await signInWithCredential(auth, credential);
+        const firebaseUser = result.user;
         
-        const [, response, promptAsync] = Google.useAuthRequest({
-          clientId,
-          iosClientId: process.env.GOOGLE_IOS_CLIENT_ID,
-          androidClientId: process.env.GOOGLE_ANDROID_CLIENT_ID,
-        });
-        if (response?.type === 'success') {
-            const { id_token } = response.params;
-            const credential = GoogleAuthProvider.credential(id_token);
-            const result = await signInWithCredential(auth, credential);
-            const user = result.user;
-            await AsyncStorage.setItem('user', JSON.stringify({
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-            }));
-            return user;
-          }
-          
-          return await promptAsync();
-        }
-      } catch (error) {
-        throw error;
+        // Save user data
+        await AsyncStorage.setItem('user', JSON.stringify({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+        }));
+        
+        return firebaseUser;
+      } else {
+        throw new Error('Google Sign In was cancelled');
       }
-    };
+    }
+  } catch (error) {
+    console.error('Error with Google Sign In:', error);
+    throw error;
+  }
+};
 
 // Function to sign out
 export const signOutUser = async () => {
