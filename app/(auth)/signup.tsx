@@ -1,180 +1,347 @@
-import { useState } from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
-import { Link, router } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
+import { router } from 'expo-router';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { signup } from '@/services/firebase';
+import { StatusBar } from 'expo-status-bar';
+
+const { width, height } = Dimensions.get('window');
 
 export default function SignUpPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold
+  });
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" color="#FF4B3E" />;
+  }
 
   const handleSignUp = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!name || !email || !password || !confirmPassword) {
+      alert('Please fill in all fields');
       return;
     }
-
-    if (!agreeTerms) {
-      Alert.alert('Error', 'Please agree to Terms & Conditions');
+    
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
       return;
     }
-
+    
+    setLoading(true);
     try {
       const user = await signup(email, password);
       if (user) {
+        // Here you could store the name in a user profile if needed
         router.replace('/(auth)/login');
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      alert(error.message || 'An error occurred during sign up');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleGoogleSignUp = () => {
+    // Implement Google sign up logic here
+    alert('Google sign up to be implemented');
+  };
+
+  const goToLogin = () => {
+    router.push('/(auth)/login');
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Logo */}
-      <Image source={require('@/assets/images/logo.png')} style={styles.logo}  />
-      {/* Title */}
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Create your account to start ordering fresh food!</Text>
-
-      {/* Email Input */}
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="email" size={20} color="#666" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-
-      {/* Password Input */}
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="lock" size={20} color="#666" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-      </View>
-
-      {/* Terms Checkbox */}
-      <TouchableOpacity
-        style={styles.checkboxContainer}
-        onPress={() => setAgreeTerms(!agreeTerms)}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
-        <View style={[styles.checkbox, agreeTerms && styles.checked]}>
-          {agreeTerms && <MaterialIcons name="check" size={14} color="#fff" />}
-        </View>
-        <Text style={styles.checkboxText}>I agree with Terms & Conditions</Text>
-      </TouchableOpacity>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer} 
+          showsVerticalScrollIndicator={false}
+        >
+          <StatusBar style="auto" />
+          
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('@/assets/images/logo.png')} 
+              style={styles.logo} 
+            />
+          </View>
 
-      {/* Sign Up Button - update the onPress handler */}
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
+          <Text style={styles.heading}>Create an account</Text>
 
-      {/* Log In Link */}
-      <Link href="/login" asChild>
-        <TouchableOpacity>
-          <Text style={styles.loginText}>Already have an account? Log In</Text>
-        </TouchableOpacity>
-      </Link>
-    </View>
+          {/* Name Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Name"
+              value={name}
+              onChangeText={setName}
+              placeholderTextColor="#999999"
+            />
+          </View>
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#999999"
+            />
+          </View>
+
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              placeholderTextColor="#999999"
+            />
+            <TouchableOpacity 
+              style={styles.showButton} 
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Text style={styles.showButtonText}>
+                {showPassword ? 'Hide' : 'Show'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+              placeholderTextColor="#999999"
+            />
+            <TouchableOpacity 
+              style={styles.showButton} 
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Text style={styles.showButtonText}>
+                {showConfirmPassword ? 'Hide' : 'Show'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign Up Button */}
+          <TouchableOpacity 
+            style={styles.signUpButton} 
+            onPress={handleSignUp}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.signUpButtonText}>Sign Up</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* OR Divider */}
+          <View style={styles.orContainer}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          {/* Google Sign Up */}
+          <TouchableOpacity 
+            style={styles.googleButton}
+            onPress={handleGoogleSignUp}
+            disabled={loading}
+          >
+            <Image 
+              source={require('@/assets/images/google-icon.png')} 
+              style={styles.googleIcon} 
+              resizeMode="contain"
+            />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          {/* Login Link */}
+          <View style={styles.loginContainer}>
+            <Text style={styles.alreadyAccountText}>Already have an account?</Text>
+            <TouchableOpacity onPress={goToLogin}>
+              <Text style={styles.loginText}>Log in</Text>
+            </TouchableOpacity>
+          </View>
+          
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  
-  /* Container */
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContainer: {
+    flexGrow: 1,
     alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#fff',
-    paddingTop: -20,
-    paddingBottom: -30,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: height * 0.05,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: height * 0.02,
+    marginTop: height * 0.04,
   },
   logo: {
-    width: 300,
-    height: 300,
-    marginBottom: -70,
-    resizeMode: 'contain', // Ensures it fits nicely
+    width: width * 0.35,
+    height: width * 0.35,
+    maxWidth: 150,
+    maxHeight: 150,
+    borderRadius: 20,
   },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Poppins_700Bold',
-    marginTop: 40,
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins_400Regular',
-    color: '#666',
-    marginBottom: 30,
+  heading: {
+    fontSize: 28,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#333333',
+    marginBottom: height * 0.03,
+    textAlign: 'center',
   },
   inputContainer: {
+    width: '100%',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 20,
-  },
-  icon: {
-    marginRight: 10,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
   },
   input: {
     flex: 1,
-    height: 50,
+    height: 56,
+    paddingHorizontal: 15,
     fontFamily: 'Poppins_400Regular',
+    fontSize: 16,
+    color: '#333333',
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 30,
+  showButton: {
+    paddingHorizontal: 15,
+    height: 56,
+    justifyContent: 'center',
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderColor: '#666',
-    borderRadius: 4,
+  showButtonText: {
+    color: '#333333',
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 16,
+  },
+  signUpButton: {
+    width: '100%',
+    backgroundColor: '#FF4B3E',
+    borderRadius: 12,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
+  },
+  signUpButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  orContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: height * 0.025,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E0E0E0',
+  },
+  orText: {
+    paddingHorizontal: 15,
+    color: '#666666',
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 16,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    marginBottom: height * 0.03,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
     marginRight: 10,
   },
-  checked: {
-    backgroundColor: '#800080',
-    borderColor: '#800080',
-  },
-  checkboxText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: '#666',
-  },
-  button: {
-    backgroundColor: '#000080',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
+  googleButtonText: {
+    color: '#333333',
     fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Poppins_500Medium',
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: height * 0.01,
+  },
+  alreadyAccountText: {
+    color: '#333333',
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 16,
+    marginRight: 5,
   },
   loginText: {
-    color: '#800080',
+    color: '#FF4B3E',
     fontFamily: 'Poppins_600SemiBold',
-    textAlign: 'center',
-    marginTop: 20,
+    fontSize: 16,
   },
 });

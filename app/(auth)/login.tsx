@@ -100,7 +100,7 @@ export default function Login() {
     setLoading(true);
     try {
       await loginWithEmail(email, password);
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/home');
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'An error occurred during login. Please try again.');
     } finally {
