@@ -21,6 +21,9 @@ A modern food delivery app built with **Expo** and **React Native**. Features a 
 - **Fonts**: @expo-google-fonts/poppins
 
 ---
+## FIGMA
+
+![alt text](../assets/images/example.png )
 
 ## Project Structure 📂
 ├── app/ # Main app screens and navigation
