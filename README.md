@@ -23,7 +23,7 @@ A modern food delivery app built with **Expo** and **React Native**. Features a 
 ---
 ## FIGMA
 
-![alt text](../assets/images/example.png )
+![alt text](../mo-work/assets/images/example.png )
 
 ## Project Structure 📂
 ├── app/ # Main app screens and navigation
