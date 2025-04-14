@@ -23,7 +23,9 @@ A modern food delivery app built with **Expo** and **React Native**. Features a 
 ---
 ## FIGMA design
 
-![alt text](./assets/images/example.png)
+## FIGMA design
+
+<img src="./assets/images/example.png" alt="FIGMA design" width="400" />
 
 
 ## Project Structure 📂
