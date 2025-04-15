@@ -1,26 +1,3 @@
-// import { StyleSheet, Text, View } from 'react-native'
-// import React from 'react'
-// import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
-
-
-
-
-
-// export default function ProfileScreen() {
-//     return (
-//     <View>
-//       <Text>profile</Text>
-
-//     </View>
-//   )
-// }
-
-
-// const styles = StyleSheet.create({
-  
-// })
-
-
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
@@ -52,6 +29,14 @@ export default function ProfileScreen() {
       setUser(currentUser);
       if (!currentUser) {
         router.replace('/(auth)/login');
+      } else {
+        if (__DEV__) {
+          console.log("User display name:", currentUser.displayName);
+          // If you need to handle special cases where displayName might be null
+          if (!currentUser.displayName) {
+            console.log("No display name available for user:", currentUser.email);
+          }
+        }
       }
     });
 

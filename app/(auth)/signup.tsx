@@ -17,6 +17,11 @@ import { router } from 'expo-router';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { signup } from '@/services/firebase';
 import { StatusBar } from 'expo-status-bar';
+import { updateProfile, User } from 'firebase/auth';
+import { auth } from '@/services/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -52,11 +57,22 @@ export default function SignUpPage() {
     
     setLoading(true);
     try {
-      const user = await signup(email, password);
-      if (user) {
-        // Here you could store the name in a user profile if needed
-        router.replace('/(auth)/login');
-      }
+      // Add type assertion to help TypeScript understand what we're working with
+      const user = await signup(email, password) as User;
+      
+      // Update the user's display name
+      await updateProfile(user, {
+        displayName: name
+      });
+
+      // Store user data in AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        displayName: name,
+      }));
+
+      router.replace('/(tabs)/home'); // Send them directly to home instead of login
     } catch (error: any) {
       alert(error.message || 'An error occurred during sign up');
     } finally {

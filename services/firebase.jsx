@@ -60,7 +60,8 @@ export const signup = async (email, password) => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         return userCredential.user;
     } catch (error) {
-        return error;
+        // Instead of returning the error, throw it so we can catch it properly
+        throw error;
     }
 };
 
@@ -79,18 +80,20 @@ export const logout = async () => {
 // Google login function
 // Renamed from signInWithEmailAndPassword to loginWithEmail to avoid naming conflict
 export const loginWithEmail = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      // Save user info to AsyncStorage if needed
-      await AsyncStorage.setItem('user', JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-      }));
-      return user;
-    } catch (error) {
-      throw error;
-    }
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Save user info to AsyncStorage with displayName
+    await AsyncStorage.setItem('user', JSON.stringify({
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName, // Include the display name
+    }));
+    return user;
+  } catch (error) {
+    throw error;
+  }
 };
 
   // Function for Google Sign In
