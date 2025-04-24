@@ -20,6 +20,7 @@ export default function TabsLayout() {
             <MaterialIcons name="home" size={size} color={color} />
           ),
         }}
+
       />
       <Tabs.Screen
         name="orders"

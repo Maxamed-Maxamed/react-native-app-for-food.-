@@ -144,10 +144,8 @@ export default function HomeScreen() {
   }, []);
 
   const handleChefPress = (chefId: string) => {
-    // Navigate to chef profile page
-    // This would be implemented when the chef profile screen exists
-    console.log(`Navigating to chef ${chefId}`);
-    // router.push(`/chef/${chefId}`);
+    // Navigate to chef profile page with the chef ID
+    router.push(`/chef/${chefId}`);
   };
 
   const renderCategoryItem = ({ item }: { item: Category }) => (
