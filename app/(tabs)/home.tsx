@@ -196,7 +196,11 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity style={styles.iconButton}>
             <View style={styles.iconBackground}>
-              <MaterialIcons name="restaurant" size={24} color="#fff" />
+              <MaterialIcons name="shop" size={24} color="#fff"
+                          onPress={() => router.push('/orders')}
+
+              />
+              
             </View>
           </TouchableOpacity>
         </View>

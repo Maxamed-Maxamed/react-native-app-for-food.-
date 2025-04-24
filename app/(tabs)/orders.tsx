@@ -12,13 +12,13 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCart } from '@/context/CartContext'; // We'll create this context later
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { useCart, CartItem  } from '@/context/CartContext';  // Add CartItem to the import
 export default function OrdersScreen() {
   const { items, updateQuantity, totalAmount, clearCart } = useCart();
   const [address, setAddress] = useState('');
   
-  // Fixed delivery fee
   const deliveryFee = 2.00;
   const total = totalAmount + deliveryFee;
   
@@ -33,7 +33,6 @@ export default function OrdersScreen() {
       return;
     }
     
-    // Here you would send the order to your backend/Firebase
     Alert.alert(
       'Order Placed!',
       `Your order of $${total.toFixed(2)} has been placed successfully.`,
@@ -42,14 +41,12 @@ export default function OrdersScreen() {
           text: 'OK',
           onPress: () => {
             clearCart();
-            // You could navigate to an order confirmation screen here
           },
         },
       ]
     );
   };
   
-  // If cart is empty, show empty state
   if (items.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
@@ -71,87 +68,118 @@ export default function OrdersScreen() {
     );
   }
   
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Your Order</Text>
-      </View>
-      
-      <ScrollView>
-        {/* Order Items */}
-        {items.map((item) => (
-          <View key={item.id} style={styles.orderItem}>
-            <Image source={item.image} style={styles.itemImage} />
-            
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-            </View>
-            
-            <View style={styles.quantityControl}>
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-              >
-                <Text style={styles.quantityButtonText}>−</Text>
-              </TouchableOpacity>
-              
-              <Text style={styles.quantityText}>{item.quantity}</Text>
-              
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => updateQuantity(item.id, item.quantity + 1)}
-              >
-                <Text style={styles.quantityButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-        
-        {/* Price Details */}
-        <View style={styles.priceDetails}>
-          <Text style={styles.priceDetailsTitle}>Price Details</Text>
-          
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Item total</Text>
-            <Text style={styles.priceValue}>${totalAmount.toFixed(2)}</Text>
-          </View>
-          
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Delivery fee</Text>
-            <Text style={styles.priceValue}>${deliveryFee.toFixed(2)}</Text>
-          </View>
-          
-          <View style={[styles.priceRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
-          </View>
-          
-          {/* Address Input */}
-          <View style={styles.addressContainer}>
-            <Text style={styles.addressLabel}>Address</Text>
-            <TouchableOpacity style={styles.addressInput}>
-              <TextInput
-                style={styles.addressText}
-                placeholder="Enter your address"
-                value={address}
-                onChangeText={setAddress}
-                placeholderTextColor="#999"
-              />
-              <MaterialIcons name="keyboard-arrow-right" size={24} color="#999" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-      
-      {/* Place Order Button */}
-      <TouchableOpacity 
-        style={styles.placeOrderButton}
-        onPress={handlePlaceOrder}
+  const renderRightActions = (item: CartItem) => {
+    return (
+      <TouchableOpacity
+        style={styles.deleteAction}
+        onPress={() => {
+          Alert.alert(
+            'Remove Item',
+            'Are you sure you want to remove this item?',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => updateQuantity(item.id, 0),
+              },
+            ]
+          );
+        }}
       >
-        <Text style={styles.placeOrderText}>Place Order</Text>
+        <MaterialIcons name="delete" size={24} color="#fff" />
       </TouchableOpacity>
-    </SafeAreaView>
+    );
+  };
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Your Order</Text>
+        </View>
+        
+        <ScrollView>
+          {items.map((item) => (
+            <Swipeable
+              key={item.id}
+              renderRightActions={() => renderRightActions(item)}
+              rightThreshold={40}
+            >
+              <View style={styles.orderItem}>
+                <Image source={item.image} style={styles.itemImage} />
+                
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                </View>
+                
+                <View style={styles.quantityControl}>
+                  <TouchableOpacity 
+                    style={styles.quantityButton}
+                    onPress={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                  >
+                    <Text style={styles.quantityButtonText}>−</Text>
+                  </TouchableOpacity>
+                  
+                  <Text style={styles.quantityText}>{item.quantity}</Text>
+                  
+                  <TouchableOpacity 
+                    style={styles.quantityButton}
+                    onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                  >
+                    <Text style={styles.quantityButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Swipeable>
+          ))}
+        
+          <View style={styles.priceDetails}>
+            <Text style={styles.priceDetailsTitle}>Price Details</Text>
+            
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Item total</Text>
+              <Text style={styles.priceValue}>${totalAmount.toFixed(2)}</Text>
+            </View>
+            
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Delivery fee</Text>
+              <Text style={styles.priceValue}>${deliveryFee.toFixed(2)}</Text>
+            </View>
+            
+            <View style={[styles.priceRow, styles.totalRow]}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+            </View>
+            
+            <View style={styles.addressContainer}>
+              <Text style={styles.addressLabel}>Address</Text>
+              <TouchableOpacity style={styles.addressInput}>
+                <TextInput
+                  style={styles.addressText}
+                  placeholder="Enter your address"
+                  value={address}
+                  onChangeText={setAddress}
+                  placeholderTextColor="#999"
+                />
+                <MaterialIcons name="keyboard-arrow-right" size={24} color="#999" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+        
+        <TouchableOpacity 
+          style={styles.placeOrderButton}
+          onPress={handlePlaceOrder}
+        >
+          <Text style={styles.placeOrderText}>Place Order</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
 
@@ -164,93 +192,93 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
   },
   headerTitle: {
-    fontSize: 24,
-    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#333',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
   },
   emptyText: {
     fontSize: 18,
-    fontFamily: 'Poppins_500Medium',
     color: '#666',
     marginTop: 16,
     marginBottom: 24,
   },
   browseButton: {
-    backgroundColor: '#FF4B3E',
-    paddingVertical: 12,
+    backgroundColor: '#000080',
     paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 8,
   },
   browseButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
+    fontWeight: '600',
   },
   orderItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
   },
   itemImage: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
     borderRadius: 8,
   },
   itemInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 16,
+    justifyContent: 'center',
   },
   itemName: {
     fontSize: 16,
-    fontFamily: 'Poppins_500Medium',
+    fontWeight: '500',
     color: '#333',
+    marginBottom: 4,
   },
   itemPrice: {
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
     color: '#666',
-    marginTop: 4,
   },
   quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginLeft: 16,
   },
   quantityButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   quantityButtonText: {
     fontSize: 18,
-    fontFamily: 'Poppins_400Regular',
+    color: '#333',
   },
   quantityText: {
     fontSize: 16,
-    fontFamily: 'Poppins_400Regular',
     marginHorizontal: 12,
+    color: '#333',
   },
   priceDetails: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f8f8',
+    marginTop: 16,
   },
   priceDetailsTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
+    fontWeight: '600',
     color: '#333',
     marginBottom: 16,
   },
@@ -261,56 +289,54 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
     color: '#666',
   },
   priceValue: {
     fontSize: 14,
-    fontFamily: 'Poppins_500Medium',
     color: '#333',
   },
   totalRow: {
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 12,
-    marginTop: 4,
+    borderTopColor: '#eee',
   },
   totalLabel: {
     fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
+    fontWeight: '600',
     color: '#333',
   },
   totalValue: {
     fontSize: 16,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#333',
+    fontWeight: '600',
+    color: '#000080',
   },
   addressContainer: {
     marginTop: 24,
   },
   addressLabel: {
     fontSize: 16,
-    fontFamily: 'Poppins_500Medium',
+    fontWeight: '600',
     color: '#333',
     marginBottom: 8,
   },
   addressInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
   },
   addressText: {
     flex: 1,
     fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
+    color: '#333',
+    paddingVertical: 12,
   },
   placeOrderButton: {
-    backgroundColor: '#FF4B3E',
+    backgroundColor: '#000080',
     margin: 16,
     padding: 16,
     borderRadius: 8,
@@ -318,7 +344,14 @@ const styles = StyleSheet.create({
   },
   placeOrderText: {
     color: '#fff',
-    fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteAction: {
+    backgroundColor: '#FF4B3E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
   },
 });
