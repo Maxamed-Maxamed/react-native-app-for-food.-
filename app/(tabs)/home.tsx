@@ -196,7 +196,7 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity style={styles.iconButton}>
             <View style={styles.iconBackground}>
-              <MaterialIcons name="shop" size={24} color="#fff"
+              <MaterialIcons name="shopping-cart" size={24} color="#FF4B3E"
                           onPress={() => router.push('/orders')}
 
               />
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   iconBackground: {
-    backgroundColor: '#00669B',
+    backgroundColor: 'white',
     borderRadius: 8,
     width: 40,
     height: 40,
