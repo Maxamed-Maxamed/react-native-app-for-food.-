@@ -50,9 +50,9 @@ export default function OrdersScreen() {
   if (items.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <Text style={styles.headerTitle}>Your Order</Text>
-        </View>
+        </View> */}
         
         <View style={styles.emptyContainer}>
           <MaterialIcons name="shopping-cart" size={80} color="#ddd" />
