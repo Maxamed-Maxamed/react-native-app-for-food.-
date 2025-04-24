@@ -159,7 +159,7 @@ export default function ChefProfileScreen() {
 
   // Function to view cart and navigate to order screen
   const viewCart = () => {
-    router.push('/order');
+    router.push('/orders');
   };
 
   return (
