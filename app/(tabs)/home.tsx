@@ -57,28 +57,56 @@ const featuredChefs: Chef[] = [
     name: 'Jacob Jones',
     image: require('@/assets/images/chef1.png'),
     rating: 4.5,
-    cuisine: 'Italian Cuisine',
+    cuisine: 'Italian, Mediterranean',
   },
   {
     id: '2',
     name: 'Cameron Williamson',
     image: require('@/assets/images/chef2.png'),
     rating: 4.8,
-    cuisine: 'Seasonal & Local',
+    cuisine: 'Seasonal & Local, Vegan',
   },
   {
     id: '3',
     name: 'Jenny Wilson',
     image: require('@/assets/images/chef3.png'),
     rating: 4.7,
-    cuisine: 'Pastry Expert',
+    cuisine: 'Pastry, Italian',
   },
   {
     id: '4',
     name: 'Robert Fox',
     image: require('@/assets/images/chef4.png'),
     rating: 4.9,
-    cuisine: 'Asian Fusion',
+    cuisine: 'Asian, Vegan',
+  },
+  {
+    id: '5',
+    name: 'Sarah Chen',
+    image: require('@/assets/images/chef1.png'),
+    rating: 4.6,
+    cuisine: 'Asian, Mediterranean',
+  },
+  {
+    id: '6',
+    name: 'Maria Garcia',
+    image: require('@/assets/images/chef2.png'),
+    rating: 4.8,
+    cuisine: 'Mediterranean, Pastry',
+  },
+  {
+    id: '7',
+    name: 'Alex Kim',
+    image: require('@/assets/images/chef3.png'),
+    rating: 4.7,
+    cuisine: 'Asian, Italian',
+  },
+  {
+    id: '8',
+    name: 'Emma Thompson',
+    image: require('@/assets/images/chef4.png'),
+    rating: 4.9,
+    cuisine: 'Vegan, Pastry',
   },
 ];
 
@@ -129,6 +157,9 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 
 export default function HomeScreen() {
   const [userName, setUserName] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredChefs, setFilteredChefs] = useState<Chef[]>(featuredChefs);
   
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -143,15 +174,33 @@ export default function HomeScreen() {
     return () => unsubscribe();
   }, []);
 
+  // Filter chefs based on search query and selected category
+  useEffect(() => {
+    const filtered = featuredChefs.filter(chef => {
+      const matchesSearch = searchQuery === '' ||
+        chef.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chef.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = !selectedCategory ||
+        chef.cuisine.toLowerCase().includes(selectedCategory.replace(' Chefs', '').toLowerCase());
+      
+      return matchesSearch && matchesCategory;
+    });
+    setFilteredChefs(filtered);
+  }, [searchQuery, selectedCategory]);
+
   const handleChefPress = (chefId: string) => {
     // Navigate to chef profile page with the chef ID
     router.push(`/chef/${chefId}`);
   };
 
   const renderCategoryItem = ({ item }: { item: Category }) => (
-    <TouchableOpacity style={styles.categoryItem}>
+    <TouchableOpacity 
+      style={[styles.categoryItem, selectedCategory === item.name && styles.selectedCategory]}
+      onPress={() => setSelectedCategory(selectedCategory === item.name ? '' : item.name)}
+    >
       <Text style={styles.categoryIcon}>{item.icon}</Text>
-      <Text style={styles.categoryText}>{item.name}</Text>
+      <Text style={[styles.categoryText, selectedCategory === item.name && styles.selectedCategoryText]}>{item.name}</Text>
     </TouchableOpacity>
   );
 
@@ -210,8 +259,10 @@ export default function HomeScreen() {
           <MaterialIcons name="search" size={24} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search for chefs"
+            placeholder="Search for chefs or cuisines"
             placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
 
@@ -229,8 +280,14 @@ export default function HomeScreen() {
         {/* Featured Chefs */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Featured Chefs</Text>
-          <View style={styles.chefsContainer}>
-            {featuredChefs.map((chef) => (
+          {filteredChefs.length === 0 ? (
+            <View style={styles.noResultsContainer}>
+              <MaterialIcons name="search-off" size={48} color="#ccc" />
+              <Text style={styles.noResultsText}>No chefs found matching your search</Text>
+            </View>
+          ) : (
+            <View style={styles.chefsContainer}>
+              {filteredChefs.map((chef) => (
               <TouchableOpacity 
                 key={chef.id}
                 style={styles.chefCard}
@@ -245,6 +302,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          )}
         </View>
 
         {/* Daily Specials */}
@@ -268,6 +326,18 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  noResultsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  noResultsText: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
+    textAlign: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f8f8',
@@ -349,6 +419,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
+  },
+  selectedCategory: {
+    backgroundColor: '#FF4B3E',
+  },
+  selectedCategoryText: {
+    color: '#fff',
   },
   categoryIcon: {
     fontSize: 18,
