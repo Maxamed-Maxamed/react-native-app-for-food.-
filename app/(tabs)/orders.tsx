@@ -50,10 +50,6 @@ export default function OrdersScreen() {
   if (items.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        {/* <View style={styles.header}>
-          <Text style={styles.headerTitle}>Your Order</Text>
-        </View> */}
-        
         <View style={styles.emptyContainer}>
           <MaterialIcons name="shopping-cart" size={80} color="#ddd" />
           <Text style={styles.emptyText}>Your cart is empty</Text>
@@ -62,6 +58,14 @@ export default function OrdersScreen() {
             onPress={() => router.push('/(tabs)/home')}
           >
             <Text style={styles.browseButtonText}>Browse Chefs</Text>
+          </TouchableOpacity>
+          
+          {/* Add the history button */}
+          <TouchableOpacity 
+            style={styles.historyButton}
+            onPress={() => router.push('/history')}
+          >
+            <Text style={styles.historyButtonText}>View Order History</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -353,5 +357,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 80,
     height: '100%',
+  },
+  historyButton: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#FF4B3E',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  historyButtonText: {
+    color: '#FF4B3E',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

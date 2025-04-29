@@ -1,0 +1,255 @@
+import React from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useOrderHistory, Order } from '@/context/OrderHistoryContext';
+import { formatDistanceToNow } from 'date-fns';
+
+export default function OrderHistoryScreen() {
+  const { orders } = useOrderHistory();
+
+  if (orders.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <MaterialIcons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Order History</Text>
+        </View>
+        
+        <View style={styles.emptyContainer}>
+          <MaterialIcons name="receipt-long" size={80} color="#ddd" />
+          <Text style={styles.emptyText}>No order history yet</Text>
+          <TouchableOpacity 
+            style={styles.browseButton}
+            onPress={() => router.push('/(tabs)/home')}
+          >
+            <Text style={styles.browseButtonText}>Browse Chefs</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Order History</Text>
+      </View>
+      
+      <ScrollView>
+        {orders.map((order) => (
+          <OrderCard key={order.id} order={order} />
+        ))}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function OrderCard({ order }: { order: Order }) {
+  // Display time like "2 hours ago" or "3 days ago"
+  const timeAgo = formatDistanceToNow(new Date(order.date), { addSuffix: true });
+  
+  // Get a count of total items
+  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  
+  // Show status with appropriate color
+  const getStatusColor = () => {
+    switch (order.status) {
+      case 'delivered': return '#4CAF50';
+      case 'in-progress': return '#FF9800';
+      case 'cancelled': return '#F44336';
+      default: return '#999';
+    }
+  };
+
+  return (
+    <TouchableOpacity 
+      style={styles.orderCard}
+      onPress={() => router.push(`/order-details/${order.id}`)}
+    >
+      <View style={styles.orderHeader}>
+        <Text style={styles.orderDate}>{timeAgo}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
+          <Text style={styles.statusText}>{order.status}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.orderSummary}>
+        <Text style={styles.itemCount}>{totalItems} {totalItems === 1 ? 'item' : 'items'}</Text>
+        <Text style={styles.totalAmount}>${(order.totalAmount + order.deliveryFee).toFixed(2)}</Text>
+      </View>
+      
+      <View style={styles.orderItems}>
+        {order.items.slice(0, 2).map((item) => (
+          <View key={item.id} style={styles.itemPreview}>
+            <Image source={item.image} style={styles.itemImage} />
+            <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+          </View>
+        ))}
+        {order.items.length > 2 && (
+          <View style={styles.moreItems}>
+            <Text style={styles.moreItemsText}>+{order.items.length - 2} more</Text>
+          </View>
+        )}
+      </View>
+      
+      <View style={styles.orderFooter}>
+        <MaterialIcons name="location-on" size={16} color="#666" />
+        <Text style={styles.addressText} numberOfLines={1}>{order.address}</Text>
+        <MaterialIcons name="chevron-right" size={24} color="#999" />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  browseButton: {
+    backgroundColor: '#FF4B3E',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  browseButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  orderCard: {
+    margin: 12,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  orderDate: {
+    fontSize: 14,
+    color: '#666',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  orderSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  itemCount: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  totalAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF4B3E',
+  },
+  orderItems: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  itemPreview: {
+    marginRight: 12,
+    alignItems: 'center',
+    width: 60,
+  },
+  itemImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  itemName: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+  moreItems: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreItemsText: {
+    fontSize: 10,
+    color: '#666',
+  },
+  orderFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 12,
+  },
+  addressText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    marginHorizontal: 8,
+  },
+});
