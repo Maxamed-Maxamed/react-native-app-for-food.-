@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,6 +15,17 @@ import { formatDistanceToNow } from 'date-fns';
 
 export default function OrderHistoryScreen() {
   const { orders } = useOrderHistory();
+  // Force re-render when orders update
+  const [, setRefresh] = useState(0);
+
+  // Poll for updates every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefresh(r => r + 1);
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   if (orders.length === 0) {
     return (
@@ -75,6 +86,16 @@ function OrderCard({ order }: { order: Order }) {
     }
   };
 
+  // Get status icon
+  const getStatusIcon = () => {
+    switch (order.status) {
+      case 'delivered': return "check-circle";
+      case 'in-progress': return "delivery-dining";
+      case 'cancelled': return "cancel";
+      default: return "help";
+    }
+  };
+
   return (
     <TouchableOpacity 
       style={styles.orderCard}
@@ -83,6 +104,7 @@ function OrderCard({ order }: { order: Order }) {
       <View style={styles.orderHeader}>
         <Text style={styles.orderDate}>{timeAgo}</Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
+          <MaterialIcons name={getStatusIcon()} size={12} color="#fff" style={styles.statusIcon} />
           <Text style={styles.statusText}>{order.status}</Text>
         </View>
       </View>
@@ -183,9 +205,14 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  statusIcon: {
+    marginRight: 4,
   },
   statusText: {
     color: '#fff',

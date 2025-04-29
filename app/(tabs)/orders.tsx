@@ -14,9 +14,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-import { useCart, CartItem  } from '@/context/CartContext';  // Add CartItem to the import
+import { useCart, CartItem } from '@/context/CartContext';
+import { useOrderHistory } from '@/context/OrderHistoryContext';
+
 export default function OrdersScreen() {
   const { items, updateQuantity, totalAmount, clearCart } = useCart();
+  const { addOrder } = useOrderHistory();
   const [address, setAddress] = useState('');
   
   const deliveryFee = 2.00;
@@ -33,10 +36,25 @@ export default function OrdersScreen() {
       return;
     }
     
+    // Save the order to history
+    addOrder({
+      items: [...items],
+      totalAmount,
+      deliveryFee,
+      address,
+    });
+    
     Alert.alert(
       'Order Placed!',
-      `Your order of $${total.toFixed(2)} has been placed successfully.`,
+      `Your order of $${total.toFixed(2)} has been placed successfully.\n\nIt will be delivered in about a minute.`,
       [
+        {
+          text: 'View Order History',
+          onPress: () => {
+            clearCart();
+            router.push('/history');
+          },
+        },
         {
           text: 'OK',
           onPress: () => {

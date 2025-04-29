@@ -16,6 +16,7 @@ interface OrderHistoryContextType {
   orders: Order[];
   addOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => void;
   clearHistory: () => void;
+  updateOrderStatus: (id: string, status: Order['status']) => void;
 }
 
 const OrderHistoryContext = createContext<OrderHistoryContextType | undefined>(undefined);
@@ -61,6 +62,19 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
     };
     
     setOrders((currentOrders) => [newOrder, ...currentOrders]);
+    
+    // Set a timer to automatically change status to "delivered" after 1 minute
+    setTimeout(() => {
+      updateOrderStatus(newOrder.id, 'delivered');
+    }, 60000); // 60000 ms = 1 minute
+  };
+
+  const updateOrderStatus = (id: string, status: Order['status']) => {
+    setOrders((currentOrders) => 
+      currentOrders.map(order => 
+        order.id === id ? { ...order, status } : order
+      )
+    );
   };
 
   const clearHistory = () => {
@@ -69,7 +83,7 @@ export function OrderHistoryProvider({ children }: { children: React.ReactNode }
   };
 
   return (
-    <OrderHistoryContext.Provider value={{ orders, addOrder, clearHistory }}>
+    <OrderHistoryContext.Provider value={{ orders, addOrder, clearHistory, updateOrderStatus }}>
       {children}
     </OrderHistoryContext.Provider>
   );
