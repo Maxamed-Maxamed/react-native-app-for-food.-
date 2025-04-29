@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000080',
+    color: '#FF4B3E',
   },
   addressContainer: {
     marginTop: 24,
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   placeOrderButton: {
-    backgroundColor: '#000080',
+    backgroundColor: '#FF4B3E',
     margin: 16,
     padding: 16,
     borderRadius: 8,

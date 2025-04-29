@@ -41,3 +41,6 @@ vscode
 
 *google-services.json
 *GoogleService-Info.plist
+firebase.json
+firestore.indexes.json
+firestore.rules

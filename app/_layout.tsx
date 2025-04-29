@@ -20,7 +20,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="chef/[id]" options={{ headerShown: true }} />
+        <Stack.Screen name="chef" options={{ headerShown: false }} />
       </Stack>
     </CartProvider>
   );

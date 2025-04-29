@@ -163,6 +163,7 @@ export default function ChefProfileScreen() {
   };
 
   return (
+
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
@@ -248,7 +249,10 @@ export default function ChefProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: hp('5.5%'),
     backgroundColor: '#fff',
+    paddingHorizontal: wp('0.5%'),
+    
   },
   scrollContent: {
     paddingBottom: hp('5%'),
