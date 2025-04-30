@@ -21,6 +21,7 @@ import { loginWithEmail, auth } from '@/services/firebase';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { useAuth } from '@/context/AuthContext'; // Add this import
 
 // Complete any auth sessions when the app returns from the authentication flow
 WebBrowser.maybeCompleteAuthSession();
@@ -32,6 +33,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth(); // Get the login function from AuthContext
   
   // Set up Google Auth Request
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -99,8 +102,12 @@ export default function Login() {
     
     setLoading(true);
     try {
-      await loginWithEmail(email, password);
-      router.replace('/(tabs)/home');
+      const success = await login(email, password, 'customer');
+      if (!success) {
+        Alert.alert('Login Failed', 'Invalid email or password');
+      }
+      // The navigation happens automatically in the login function
+      // so we don't need to call router.replace here
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'An error occurred during login. Please try again.');
     } finally {
