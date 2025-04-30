@@ -30,20 +30,21 @@ export default function ChefSignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  // In a real app, you would use a register function from AuthContext
-  // For now, we'll just navigate to the login screen
+  
+  const { signup } = useAuth();
+  
   const handleSignup = async () => {
+    // Form validation
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', 'All fields are required');
       return;
     }
-
+    
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-
+    
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -51,23 +52,32 @@ export default function ChefSignupScreen() {
       return;
     }
     
+    // Password strength validation (basic)
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      // Here you would typically call a registration function
-      // For now, simulate a successful registration
-      setTimeout(() => {
+      // Register as 'chef' role
+      const success = await signup(email, password, name, 'chef');
+      
+      if (success) {
         Alert.alert(
-          'Registration Successful', 
-          'Your account has been created. Please wait for admin verification.',
+          'Account Created',
+          'Your chef account has been created successfully',
           [
-            { 
-              text: 'OK', 
+            {
+              text: 'OK',
               onPress: () => router.replace('/chef-admin/login')
             }
           ]
         );
-      }, 1500);
+      } else {
+        Alert.alert('Registration Failed', 'Could not create account. Email may be in use already.');
+      }
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'An error occurred during registration');
@@ -75,10 +85,6 @@ export default function ChefSignupScreen() {
       setIsLoading(false);
     }
   };
-
-  const goToSignUp = () => {
-      router.push('/chef-admin/signup');
-    };
   
   return (
     <SafeAreaView style={styles.container}>
@@ -99,16 +105,16 @@ export default function ChefSignupScreen() {
 
           <View style={styles.logoContainer}>
             <Image 
-              source={require('@/assets/images/logo.png')}
+              source={require('@/assets/images/chef-hat.jpeg')} 
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.logoText}>EasyEat for Chefs</Text>
+            <Text style={styles.logoText}>Chef Portal</Text>
           </View>
 
           <View style={styles.formContainer}>
             <Text style={styles.title}>Sign Up</Text>
-            <Text style={styles.subtitle}>Create your chef account and start selling</Text>
+            <Text style={styles.subtitle}>Create a chef account to manage your menu</Text>
             
             <View style={styles.inputContainer}>
               <MaterialIcons name="person" size={wp('5%')} color="#666" style={styles.inputIcon} />
@@ -181,23 +187,15 @@ export default function ChefSignupScreen() {
               </TouchableOpacity>
             </View>
             
-            <View style={styles.termsContainer}>
-              <Text style={styles.termsText}>
-                By signing up, you agree to our{' '}
-                <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-                <Text style={styles.termsLink}>Privacy Policy</Text>
-              </Text>
-            </View>
-            
             <TouchableOpacity 
               style={[styles.signupButton, isLoading && styles.disabledButton]}
               onPress={handleSignup}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.signupButtonText}>Sign Up</Text>
+                <Text style={styles.signupButtonText}>Create Account</Text>
               )}
             </TouchableOpacity>
             
@@ -241,7 +239,7 @@ const styles = StyleSheet.create({
   logo: {
     width: wp('20%'),
     height: wp('20%'),
-    marginBottom: hp('1%'),
+    marginBottom: hp('2%'),
   },
   logoText: {
     fontFamily: 'Poppins_600SemiBold',
@@ -285,28 +283,16 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: wp('2%'),
   },
-  termsContainer: {
-    marginBottom: hp('3%'),
-  },
-  termsText: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: wp('3.5%'),
-    color: '#666',
-    lineHeight: hp('2.5%'),
-  },
-  termsLink: {
-    fontFamily: 'Poppins_500Medium',
-    color: '#FF4B3E',
-  },
   signupButton: {
     backgroundColor: '#FF4B3E',
     borderRadius: wp('3%'),
     paddingVertical: hp('1.8%'),
     alignItems: 'center',
     marginBottom: hp('3%'),
+    marginTop: hp('2%'),
   },
   disabledButton: {
-    backgroundColor: '#ffaca7',
+    backgroundColor: '#FFB5B0',
   },
   signupButtonText: {
     fontFamily: 'Poppins_600SemiBold',

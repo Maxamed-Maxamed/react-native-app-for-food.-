@@ -39,10 +39,13 @@ export default function ChefLoginScreen() {
     setIsLoading(true);
     
     try {
-      // Use the role 'chef' for chef login
+      // Try to login with 'chef' role
       const success = await login(email, password, 'chef');
       
-      if (!success) {
+      if (success) {
+        // Navigation will be handled in the AuthContext
+        router.replace('/chef-admin/dashboard');
+      } else {
         Alert.alert('Login Failed', 'Invalid email or password for chef account');
       }
     } catch (error) {
@@ -64,7 +67,7 @@ export default function ChefLoginScreen() {
           <View style={styles.headerContainer}>
             <TouchableOpacity 
               style={styles.backButton}
-              onPress={() => router.push('/')}
+              onPress={() => router.push('/(tabs)/home')}
             >
               <MaterialIcons name="arrow-back" size={wp('6%')} color="#333" />
             </TouchableOpacity>
@@ -72,7 +75,7 @@ export default function ChefLoginScreen() {
 
           <View style={styles.logoContainer}>
             <Image 
-              source={require('@/assets/images/logo.png')} // Replace with your logo path
+              source={require('@/assets/images/chef-hat.jpeg')} 
               style={styles.logo}
               resizeMode="contain"
             />
@@ -122,6 +125,7 @@ export default function ChefLoginScreen() {
             <TouchableOpacity 
               style={styles.forgotPassword}
               disabled={isLoading}
+              onPress={() => Alert.alert('Forgot Password', 'Please contact support to reset your password')}
             >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
@@ -132,7 +136,7 @@ export default function ChefLoginScreen() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text style={styles.loginButtonText}>Login</Text>
               )}
@@ -140,18 +144,25 @@ export default function ChefLoginScreen() {
             
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>Don't have an account? </Text>
-              <TouchableOpacity disabled={isLoading} onPress={() => router.push('/chef-admin/signup')}>
-                {/* Replace with your registration screen path */}
-                <Text style={styles.registerLink}>Sign Up</Text>
-                {/* Add onPress handler for registration if needed */}
-
+              <TouchableOpacity 
+                onPress={() => router.push('/chef-admin/signup')}
+                disabled={isLoading}
+              >
+                <Text style={styles.registerLink}>Register</Text>
               </TouchableOpacity>
             </View>
-
-            {/* For demo purposes - easy login */}
-            <View style={styles.demoContainer}>
-              <Text style={styles.demoText}>Demo Chef: chef@example.com / chefpass</Text>
-            </View>
+            
+            {/* Use demo account for testing */}
+            <TouchableOpacity 
+              style={styles.demoAccount}
+              onPress={() => {
+                setEmail('chef@example.com');
+                setPassword('chefpass');
+              }}
+              disabled={isLoading}
+            >
+              <Text style={styles.demoAccountText}>Use Demo Account</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -244,7 +255,7 @@ const styles = StyleSheet.create({
     marginBottom: hp('3%'),
   },
   disabledButton: {
-    backgroundColor: '#ffaca7',
+    backgroundColor: '#FFB5B0',
   },
   loginButtonText: {
     fontFamily: 'Poppins_600SemiBold',
@@ -255,6 +266,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: hp('3%'),
   },
   registerText: {
     fontFamily: 'Poppins_400Regular',
@@ -266,16 +278,14 @@ const styles = StyleSheet.create({
     fontSize: wp('3.5%'),
     color: '#FF4B3E',
   },
-  demoContainer: {
-    marginTop: hp('5%'),
-    padding: hp('2%'),
-    backgroundColor: '#f9f9f9',
-    borderRadius: wp('2%'),
+  demoAccount: {
     alignItems: 'center',
+    paddingVertical: hp('1%'),
   },
-  demoText: {
+  demoAccountText: {
     fontFamily: 'Poppins_400Regular',
-    fontSize: wp('3%'),
+    fontSize: wp('3.5%'),
     color: '#666',
-  },
+    textDecorationLine: 'underline',
+  }
 });

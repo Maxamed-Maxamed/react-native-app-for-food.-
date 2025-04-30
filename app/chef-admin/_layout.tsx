@@ -1,7 +1,5 @@
 import { Stack } from 'expo-router';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
 
 export default function ChefAdminLayout() {
   const [fontsLoaded] = useFonts({
@@ -9,9 +7,6 @@ export default function ChefAdminLayout() {
     Poppins_500Medium,
     Poppins_600SemiBold,
   });
-
-  SplashScreen.preventAutoHideAsync();
-  
 
   return (
     <Stack>
@@ -23,22 +18,49 @@ export default function ChefAdminLayout() {
         }}
       />
       <Stack.Screen
+        name="signup"
+        options={{
+          title: "Chef Signup",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="dashboard"
         options={{
           title: "Dashboard",
           headerShown: false,
         }}
       />
-
-        <Stack.Screen
-        name="signup"
+      {/* Orders module screens */}
+      <Stack.Screen
+        name="orders/index"
         options={{
-          title: "Sign Up",
+          title: "Orders",
           headerShown: false,
         }}
       />
-   
-      
+      <Stack.Screen
+        name="orders/[id]"
+        options={{
+          title: "Order Details",
+          headerShown: false,
+        }}
+      />
+      {/* Menu module screens */}
+      <Stack.Screen
+        name="menu/index"
+        options={{
+          title: "Menu",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="menu/edit"
+        options={{
+          title: "Edit Menu Item",
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,44 +21,74 @@ import { useAuth } from '@/context/AuthContext';
 export default function ChefDashboardScreen() {
   const { user, logout } = useAuth();
 
-  // Check if the user is authenticated and is a chef
   useEffect(() => {
-    if (!user || user.role !== 'chef') {
+    if (!user) {
       router.replace('/chef-admin/login');
+    } else if (user.role !== 'chef') {
+      Alert.alert(
+        'Access Denied',
+        'You must be logged in as a chef to access this area.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              logout();
+              router.replace('/');
+            },
+          },
+        ]
+      );
     }
   }, [user]);
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          onPress: async () => {
+            await logout();
+            router.replace('/chef-admin/login');
+          },
+        },
+      ]
+    );
+  };
+
+  const chef = {
+    name: user?.name || 'Chef',
+    image: require('@/assets/images/chef1.png'),
+    earnings: 1240.5,
+    pendingOrders: 3,
+    completedOrders: 28,
+    rating: 4.5,
+  };
 
   if (!user || user.role !== 'chef') {
     return null;
   }
 
-  // Mock data - will connect to real data later
-  const chef = {
-    name: user.name,
-    image: require('@/assets/images/chef1.png'),
-    earnings: 1240.50,
-    pendingOrders: 3,
-    completedOrders: 28,
-    rating: 4.5
-  };
-
-  const menuItemCount = 6;
-  
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Dashboard</Text>
           <Text style={styles.headerSubtitle}>Manage your business</Text>
         </View>
-        <TouchableOpacity onPress={logout}>
+        <TouchableOpacity onPress={handleLogout}>
           <MaterialIcons name="logout" size={wp('6%')} color="#FF4B3E" />
         </TouchableOpacity>
       </View>
-      
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Chef Profile Section */}
         <View style={styles.profileSection}>
@@ -68,7 +99,13 @@ export default function ChefDashboardScreen() {
               {[...Array(5)].map((_, i) => (
                 <MaterialIcons
                   key={i}
-                  name={i < Math.floor(chef.rating) ? 'star' : (i === Math.floor(chef.rating) && chef.rating % 1 > 0 ? 'star-half' : 'star-outline')}
+                  name={
+                    i < Math.floor(chef.rating)
+                      ? 'star'
+                      : i === Math.floor(chef.rating) && chef.rating % 1 > 0
+                      ? 'star-half'
+                      : 'star-outline'
+                  }
                   size={wp('4%')}
                   color="#FFB800"
                 />
@@ -77,7 +114,7 @@ export default function ChefDashboardScreen() {
             </View>
           </View>
         </View>
-        
+
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <View style={[styles.statsCard, styles.earningsCard]}>
@@ -85,61 +122,88 @@ export default function ChefDashboardScreen() {
               <Text style={styles.statsValue}>${chef.earnings.toFixed(2)}</Text>
               <Text style={styles.statsLabel}>Total Earnings</Text>
             </View>
-            <MaterialIcons name="attach-money" size={wp('10%')} color="#FF4B3E" style={styles.statsIcon} />
+            <MaterialIcons
+              name="attach-money"
+              size={wp('10%')}
+              color="#FF4B3E"
+              style={styles.statsIcon}
+            />
           </View>
-          
+
           <View style={styles.statsRow}>
             <View style={[styles.statsCard, styles.halfCard]}>
               <View style={styles.statsContent}>
                 <Text style={styles.statsValue}>{chef.pendingOrders}</Text>
                 <Text style={styles.statsLabel}>Pending Orders</Text>
               </View>
-              <MaterialIcons name="access-time" size={wp('8%')} color="#FFB800" style={styles.statsIcon} />
+              <MaterialIcons
+                name="access-time"
+                size={wp('8%')}
+                color="#FFB800"
+                style={styles.statsIcon}
+              />
             </View>
-            
+
             <View style={[styles.statsCard, styles.halfCard]}>
               <View style={styles.statsContent}>
                 <Text style={styles.statsValue}>{chef.completedOrders}</Text>
                 <Text style={styles.statsLabel}>Completed</Text>
               </View>
-              <MaterialIcons name="check-circle" size={wp('8%')} color="#4CAF50" style={styles.statsIcon} />
+              <MaterialIcons
+                name="check-circle"
+                size={wp('8%')}
+                color="#4CAF50"
+                style={styles.statsIcon}
+              />
             </View>
           </View>
         </View>
-        
+
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
-        
+
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/chef-admin/orders')}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/chef-admin/orders')}
+          >
             <View style={[styles.actionIconContainer, { backgroundColor: '#FFE8E7' }]}>
               <MaterialIcons name="receipt" size={wp('8%')} color="#FF4B3E" />
             </View>
             <Text style={styles.actionText}>Orders</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/chef-admin/menu')}>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/chef-admin/menu')}
+          >
             <View style={[styles.actionIconContainer, { backgroundColor: '#E8F4FF' }]}>
               <MaterialIcons name="restaurant-menu" size={wp('8%')} color="#0088FF" />
             </View>
             <Text style={styles.actionText}>Menu</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/chef-admin/profile')}>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/chef-admin/profile')}
+          >
             <View style={[styles.actionIconContainer, { backgroundColor: '#F0FFE8' }]}>
               <MaterialIcons name="person" size={wp('8%')} color="#4CAF50" />
             </View>
             <Text style={styles.actionText}>Profile</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/chef-admin/analytics')}>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/chef-admin/analytics')}
+          >
             <View style={[styles.actionIconContainer, { backgroundColor: '#FFF8E8' }]}>
               <MaterialIcons name="bar-chart" size={wp('8%')} color="#FFB800" />
             </View>
             <Text style={styles.actionText}>Analytics</Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* Recent Activity - Placeholder for now */}
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         <View style={styles.recentActivityCard}>
@@ -153,9 +217,9 @@ export default function ChefDashboardScreen() {
             </View>
             <MaterialIcons name="chevron-right" size={wp('6%')} color="#999" />
           </View>
-          
+
           <View style={styles.divider} />
-          
+
           <View style={styles.activityItem}>
             <View style={styles.activityIconContainer}>
               <MaterialIcons name="star" size={wp('5%')} color="#FFB800" />
