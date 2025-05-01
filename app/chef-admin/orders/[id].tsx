@@ -125,11 +125,11 @@ export default function OrderDetailScreen() {
 
   useEffect(() => {
     if (id && typeof id === 'string') {
-      // Check if the ID exists in mockOrderDetails
       if (mockOrderDetails[id]) {
+        // Valid order ID
         setOrder(mockOrderDetails[id]);
       } else {
-        // Handle case where order doesn't exist
+        // Invalid order ID
         Alert.alert('Error', 'Order not found');
         router.back();
       }
