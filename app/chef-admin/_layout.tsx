@@ -1,11 +1,12 @@
 import { Stack } from 'expo-router';
-import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 
 export default function ChefAdminLayout() {
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   return (
@@ -76,6 +77,15 @@ export default function ChefAdminLayout() {
         name="profile/edit"
         options={{
           title: "Edit Profile",
+          headerShown: false,
+        }}
+      />
+      
+      {/* Analytics module screens */}
+      <Stack.Screen
+        name="analytics/index"
+        options={{
+          title: "Analytics",
           headerShown: false,
         }}
       />
