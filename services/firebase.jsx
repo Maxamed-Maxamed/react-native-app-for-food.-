@@ -23,6 +23,17 @@ import { Platform } from 'react-native';
 // Make sure to register your scheme and client IDs
 WebBrowser.maybeCompleteAuthSession();
 
+// Add debug logging to verify config
+console.log("Firebase config (redacted):", {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ? "present" : "missing",
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ? "present" : "missing",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ? "present" : "missing",
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ? "present" : "missing",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ? "present" : "missing",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ? "present" : "missing",
+});
+
+// Make sure all required config values are present
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -31,7 +42,14 @@ const firebaseConfig = {
     messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
     measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
-  };
+};
+
+// Initialize Firebase only if config is valid
+const isConfigValid = Object.values(firebaseConfig).every(value => !!value);
+
+if (!isConfigValid) {
+  console.warn("Firebase configuration is incomplete. Some features may not work correctly.");
+}
 
 const app = initializeApp(firebaseConfig);
 
@@ -40,12 +58,17 @@ const auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage)
 });
 
-// Initialize auth state listener
+// Check what the current auth state is
+console.log("Current Firebase auth state:", auth.currentUser ? "User authenticated" : "No authenticated user");
+
+// Consolidated auth state listener
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        console.log("User detected:", user.email);
-        // You can manually store user info in AsyncStorage here if needed
-    }
+  if (user) {
+    console.log("Auth state changed: User logged in:", user.email);
+    // You can manually store user info in AsyncStorage here if needed
+  } else {
+    console.log("Auth state changed: User logged out");
+  }
 });
 
 const db = getFirestore(app);

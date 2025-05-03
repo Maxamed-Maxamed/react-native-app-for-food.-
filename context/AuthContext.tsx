@@ -12,6 +12,9 @@ import {
   onAuthStateChanged,
   User as FirebaseUser
 } from 'firebase/auth';
+import { auth } from '@/services/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
 // Types
 export type UserRole = 'customer' | 'chef';
@@ -21,6 +24,11 @@ export type User = {
   name: string;
   email: string;
   role: UserRole;
+  photoURL?: string | null;
+  bio?: string;
+  cuisine?: string;
+  phone?: string;
+  address?: string;
   // Add other user properties as needed
 };
 
@@ -32,7 +40,8 @@ type AuthContextType = {
   signup: (email: string, password: string, name: string, role: UserRole) => Promise<boolean>;
   isAuthenticated: boolean;
   isChef: boolean;
-  updateProfile: (name: string) => Promise<void>;
+  updateProfile: (profileData: Partial<User>) => Promise<void>;
+  updateProfileData: (data: {name?: string, photoURL?: string | null}) => Promise<void>;
 };
 
 // Create context
@@ -48,7 +57,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase conditionally (for production)
-let auth: ReturnType<typeof getAuth>;
+let authInstance: ReturnType<typeof getAuth>;
 
 // Only initialize Firebase if we're not in development mode or if config is available
 const isUsingFirebase = false; // Set to true when ready to use Firebase
@@ -56,7 +65,7 @@ const isUsingFirebase = false; // Set to true when ready to use Firebase
 if (isUsingFirebase && Object.values(firebaseConfig).every(v => v)) {
   try {
     const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
+    authInstance = getAuth(app);
     console.log("Firebase initialized");
   } catch (error) {
     console.error("Firebase initialization error:", error);
@@ -85,202 +94,183 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session
+  // Update your initial auth check
   useEffect(() => {
-    const checkLoginStatus = async () => {
+    const bootstrapAsync = async () => {
       try {
-        const userJson = await AsyncStorage.getItem('user');
-        if (userJson) {
-          const userData = JSON.parse(userJson);
+        // First check if there's a Firebase user
+        const currentFirebaseUser = auth.currentUser;
+        
+        // Then check AsyncStorage
+        const userJSON = await AsyncStorage.getItem('user');
+        
+        if (currentFirebaseUser && userJSON) {
+          // Both Firebase and local auth exist
+          const userData = JSON.parse(userJSON) as User;
+          
+          // Make sure they match - if not, use Firebase user data
+          if (userData.id !== currentFirebaseUser.uid) {
+            console.log("Local user ID doesn't match Firebase UID, updating...");
+            const updatedUser: User = {
+              ...userData,
+              id: currentFirebaseUser.uid,
+              email: currentFirebaseUser.email || userData.email,
+              name: currentFirebaseUser.displayName || userData.name,
+              photoURL: currentFirebaseUser.photoURL || userData.photoURL,
+              role: userData.role, // Preserve the existing role
+            };
+            
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+          } else {
+            setUser(userData);
+          }
+        } else if (currentFirebaseUser) {
+          // Firebase user exists but no local user
+          const newUser: User = {
+            id: currentFirebaseUser.uid,
+            name: currentFirebaseUser.displayName || 'User',
+            email: currentFirebaseUser.email || '',
+            role: 'chef' as UserRole, // Default to chef for existing Firebase users
+            photoURL: currentFirebaseUser.photoURL,
+          };
+          
+          await AsyncStorage.setItem('user', JSON.stringify(newUser));
+          setUser(newUser);
+        } else if (userJSON) {
+          // Only local user exists, need to authenticate with Firebase
+          const userData = JSON.parse(userJSON) as User;
+          console.log("Local user found, but no Firebase auth. Need to re-authenticate");
           setUser(userData);
         }
       } catch (error) {
-        console.error('Error retrieving user data:', error);
+        // Error retrieving data
+        console.error('Error bootstrapping auth:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (isUsingFirebase) {
-      // Use Firebase auth state instead
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          // Get user's role from AsyncStorage or another source
-          try {
-            const userDataJson = await AsyncStorage.getItem(`userData_${firebaseUser.uid}`);
-            const userData = userDataJson ? JSON.parse(userDataJson) : { role: 'customer' };
-            
-            setUser({
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'User',
-              email: firebaseUser.email || '',
-              role: userData.role,
-            });
-          } catch (error) {
-            console.error("Error getting user data:", error);
-          }
-        } else {
-          setUser(null);
-        }
-        setIsLoading(false);
-      });
-
-      return () => unsubscribe();
-    } else {
-      checkLoginStatus();
-    }
+    bootstrapAsync();
   }, []);
 
   // Login function
   const login = async (email: string, password: string, role?: UserRole): Promise<boolean> => {
-    if (isUsingFirebase) {
-      try {
-        // Authenticate with Firebase
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const firebaseUser = userCredential.user;
-        
-        // Check if this user has the correct role
-        const userDataJson = await AsyncStorage.getItem(`userData_${firebaseUser.uid}`);
-        const userData = userDataJson ? JSON.parse(userDataJson) : { role: 'customer' };
-        
-        // If a specific role is required and doesn't match, reject login
-        if (role && userData.role !== role) {
-          await signOut(auth);
-          return false;
-        }
-        
-        // Create user object
-        const currentUser: User = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'User',
-          email: firebaseUser.email || '',
-          role: userData.role,
-        };
-        
-        setUser(currentUser);
-        await AsyncStorage.setItem('user', JSON.stringify(currentUser));
-        
-        // Navigate based on role
-        if (currentUser.role === 'chef') {
-          router.replace('/chef-admin/dashboard');
-        } else {
-          router.replace('/(tabs)/home');
-        }
-        
-        return true;
-      } catch (error) {
-        console.error("Firebase login error:", error);
-        return false;
-      }
-    } else {
-      // Mock implementation for development
-      // If role is provided, filter by role, otherwise just check credentials
-      const matchedUser = role 
-        ? MOCK_USERS.find(u => u.email === email && u.password === password && u.role === role)
-        : MOCK_USERS.find(u => u.email === email && u.password === password);
-
-      if (matchedUser) {
-        // Create user object (excluding password)
-        const { password: _, ...userWithoutPassword } = matchedUser;
-        setUser(userWithoutPassword);
-        
-        // Save to AsyncStorage
-        await AsyncStorage.setItem('user', JSON.stringify(userWithoutPassword));
-
-        return true;
-      }
+    try {
+      // First try Firebase authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
       
+      // Create a properly typed User object
+      const userData: User = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'Chef',
+        email: email,
+        role: role || 'customer', // Default to 'customer' which is a valid UserRole
+        photoURL: firebaseUser.photoURL,
+      };
+      
+      setUser(userData);
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      
+      return true;
+    } catch (error) {
+      console.error('Firebase login error:', error);
       return false;
     }
   };
 
   // Signup function
   const signup = async (email: string, password: string, name: string, role: UserRole): Promise<boolean> => {
-    if (isUsingFirebase) {
-      try {
-        // Create user with Firebase
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const firebaseUser = userCredential.user;
-        
-        // Update profile to add display name
-        await firebaseUpdateProfile(firebaseUser, { displayName: name });
-        
-        // Store role information in AsyncStorage
-        await AsyncStorage.setItem(`userData_${firebaseUser.uid}`, JSON.stringify({ role }));
-        
-        // Create user object
-        const newUser: User = {
-          id: firebaseUser.uid,
-          name: name,
-          email: email,
-          role: role,
-        };
-        
-        setUser(newUser);
-        await AsyncStorage.setItem('user', JSON.stringify(newUser));
-        
-        return true;
-      } catch (error) {
-        console.error("Firebase signup error:", error);
-        return false;
-      }
-    } else {
-      // Mock implementation for development
-      // Check if email already exists
-      if (MOCK_USERS.some(u => u.email === email)) {
-        return false;
-      }
+    try {
+      // First create the Firebase user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
       
-      // Create new mock user
-      const newUser: User & { password: string } = {
-        id: `${MOCK_USERS.length + 1}`,
-        email,
-        password,
-        name,
-        role,
+      // Update the profile name
+      await firebaseUpdateProfile(firebaseUser, {
+        displayName: name
+      });
+      
+      const newUser = {
+        id: firebaseUser.uid, // Use Firebase UID
+        name: name,
+        email: email,
+        role: role,
       };
       
-      // In a real app, we would save this to a database
-      // For mock, we just add to our in-memory array
-      MOCK_USERS.push(newUser);
-      
-      // Create user object (excluding password)
-      const { password: _, ...userWithoutPassword } = newUser;
-      setUser(userWithoutPassword);
-      
-      // Save to AsyncStorage
-      await AsyncStorage.setItem('user', JSON.stringify(userWithoutPassword));
+      setUser(newUser);
+      await AsyncStorage.setItem('user', JSON.stringify(newUser));
       
       return true;
+    } catch (error) {
+      console.error('Firebase signup error:', error);
+      return false;
     }
   };
 
   // Logout function
   const logout = async () => {
     try {
-      if (isUsingFirebase) {
-        await signOut(auth);
-      }
+      // Sign out from Firebase
+      await signOut(auth);
+      
       await AsyncStorage.removeItem('user');
       setUser(null);
-      router.replace('/');
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Logout error:', error);
     }
   };
   
   // Update profile function
-  const updateProfile = async (name: string) => {
+  const updateProfile = async (profileData: Partial<User>) => {
+    if (!user || !auth.currentUser) return;
+    
+    try {
+      // Update the display name if provided
+      if (profileData.name && auth.currentUser) {
+        await firebaseUpdateProfile(auth.currentUser, { 
+          displayName: profileData.name 
+        });
+      }
+      
+      // Update the photo URL if provided
+      if (profileData.photoURL && auth.currentUser) {
+        await firebaseUpdateProfile(auth.currentUser, { 
+          photoURL: profileData.photoURL 
+        });
+      }
+      
+      // Update the local user state
+      const updatedUser = { ...user, ...profileData };
+      setUser(updatedUser);
+      
+      // Also save to AsyncStorage for persistence
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
+
+  const updateProfileData = async (data: {name?: string, photoURL?: string | null}) => {
     if (!user) return;
     
-    if (isUsingFirebase && auth.currentUser) {
-      await firebaseUpdateProfile(auth.currentUser, { displayName: name });
+    try {
+      const updatedUser = { 
+        ...user, 
+        name: data.name || user.name,
+        photoURL: data.photoURL !== undefined ? data.photoURL : user.photoURL
+      };
+      
+      setUser(updatedUser);
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error('Error updating profile in context:', error);
+      throw error;
     }
-    
-    const updatedUser = { ...user, name };
-    setUser(updatedUser);
-    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
   };
+
 
   const value = {
     user,
@@ -291,6 +281,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user,
     isChef: user?.role === 'chef',
     updateProfile,
+    updateProfileData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

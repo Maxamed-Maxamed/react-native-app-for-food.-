@@ -31,6 +31,7 @@ export default function ChefAdminLayout() {
           headerShown: false,
         }}
       />
+      
       {/* Orders module screens */}
       <Stack.Screen
         name="orders/index"
@@ -46,6 +47,7 @@ export default function ChefAdminLayout() {
           headerShown: false,
         }}
       />
+      
       {/* Menu module screens */}
       <Stack.Screen
         name="menu/index"
@@ -58,6 +60,22 @@ export default function ChefAdminLayout() {
         name="menu/edit"
         options={{
           title: "Edit Menu Item",
+          headerShown: false,
+        }}
+      />
+      
+      {/* Profile module screens */}
+      <Stack.Screen
+        name="profile/index"
+        options={{
+          title: "Profile",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="profile/edit"
+        options={{
+          title: "Edit Profile",
           headerShown: false,
         }}
       />
