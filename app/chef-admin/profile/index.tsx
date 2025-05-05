@@ -192,13 +192,13 @@ export default function ChefProfileScreen() {
             </View>
             
             {/* Logout Button */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
             >
               <MaterialIcons name="logout" size={wp('5.5%')} color="#fff" />
               <Text style={styles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </>
         )}
       </ScrollView>
