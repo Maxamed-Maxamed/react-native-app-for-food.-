@@ -102,14 +102,34 @@ export default function Login() {
     
     setLoading(true);
     try {
+      console.log("Attempting login with email:", email);
       const success = await login(email, password, 'customer');
+      console.log("Login success:", success);
+      
       if (success) {
-        // Add explicit navigation to home screen
-        router.replace('/(tabs)/home');
+        console.log("Attempting navigation to /(tabs)/home");
+        
+        // Add a slight delay to ensure Firebase auth state is fully updated
+        setTimeout(() => {
+          try {
+            router.replace('/(tabs)/home');
+            console.log("Navigation command sent");
+          } catch (navError) {
+            console.error("Navigation error:", navError);
+            // Fallback navigation attempt
+            try {
+              router.replace('/');
+              console.log("Fallback navigation sent");
+            } catch (fallbackError) {
+              console.error("Fallback navigation error:", fallbackError);
+            }
+          }
+        }, 500);
       } else {
         Alert.alert('Login Failed', 'Invalid email or password');
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       Alert.alert('Login Failed', error.message || 'An error occurred during login. Please try again.');
     } finally {
       setLoading(false);
