@@ -16,16 +16,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useCart, CartItem } from '@/context/CartContext';
 import { useOrderHistory } from '@/context/OrderHistoryContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function OrdersScreen() {
   const { items, updateQuantity, totalAmount, clearCart } = useCart();
   const { addOrder } = useOrderHistory();
   const [address, setAddress] = useState('');
+  const { user } = useAuth();
   
   const deliveryFee = 2.00;
   const total = totalAmount + deliveryFee;
   
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (items.length === 0) {
       Alert.alert('Empty Cart', 'Please add items to your cart before placing an order.');
       return;
@@ -35,34 +37,56 @@ export default function OrdersScreen() {
       Alert.alert('Address Required', 'Please enter your delivery address.');
       return;
     }
-    
-    // Save the order to history
-    addOrder({
-      items: [...items],
-      totalAmount,
-      deliveryFee,
-      address,
-    });
-    
-    Alert.alert(
-      'Order Placed!',
-      `Your order of $${total.toFixed(2)} has been placed successfully.\n\nIt will be delivered in about a minute.`,
-      [
-        {
-          text: 'View Order History',
-          onPress: () => {
-            clearCart();
-            router.push('/history');
+
+    if (!user) {
+      Alert.alert(
+        'Login Required',
+        'You need to be logged in to place an order.',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
           },
-        },
-        {
-          text: 'OK',
-          onPress: () => {
-            clearCart();
+          {
+            text: 'Login',
+            onPress: () => router.push('/login')
+          }
+        ]
+      );
+      return;
+    }
+    
+    try {
+      await addOrder({
+        items: [...items],
+        totalAmount,
+        deliveryFee,
+        address,
+      });
+      
+      Alert.alert(
+        'Order Placed!',
+        `Your order of $${total.toFixed(2)} has been placed successfully.\n\nIt will be delivered in about a minute.`,
+        [
+          {
+            text: 'View Order History',
+            onPress: () => {
+              clearCart();
+              router.push('/history');
+            },
           },
-        },
-      ]
-    );
+          {
+            text: 'OK',
+            onPress: () => {
+              clearCart();
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error placing order:', error);
+      Alert.alert('Error', 'There was a problem placing your order. Please try again.');
+    }
   };
   
   if (items.length === 0) {
@@ -78,7 +102,6 @@ export default function OrdersScreen() {
             <Text style={styles.browseButtonText}>Browse Chefs</Text>
           </TouchableOpacity>
           
-          {/* Add the history button */}
           <TouchableOpacity 
             style={styles.historyButton}
             onPress={() => router.push('/history')}

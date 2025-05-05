@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  SafeAreaView, 
+  ScrollView, 
+  TouchableOpacity, 
   Image,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
-import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useOrderHistory, Order } from '@/context/OrderHistoryContext';
+import { router } from 'expo-router';
+import { useOrderHistory } from '@/context/OrderHistoryContext';
 import { formatDistanceToNow } from 'date-fns';
+import { Order } from '@/context/OrderHistoryContext';
+import { CartItem } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function OrderHistoryScreen() {
-  const { orders } = useOrderHistory();
+  const { orders, firestoreOrders, refreshOrders, isLoading } = useOrderHistory();
+  const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
   // Force re-render when orders update
   const [, setRefresh] = useState(0);
 
@@ -27,7 +35,39 @@ export default function OrderHistoryScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  if (orders.length === 0) {
+  // Handle manual refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshOrders();
+    setRefreshing(false);
+  };
+
+  // Determine which orders to display
+  const displayOrders = user ? firestoreOrders : orders;
+
+  // Convert Firestore orders to the format our OrderCard component expects
+  const normalizeOrder = (order: any): Order => {
+    if ('customerId' in order) { // It's a Firestore order
+      return {
+        id: order.id,
+        items: order.items.map((item: any) => ({
+          ...item,
+          chefId: order.chefId,
+          chefName: order.chefName,
+        })),
+        totalAmount: order.subtotal,
+        deliveryFee: order.deliveryFee,
+        address: order.address,
+        date: order.createdAt.toDate ? order.createdAt.toDate().toISOString() : order.createdAt,
+        status: order.status === 'preparing' || order.status === 'new' || order.status === 'ready' 
+          ? 'in-progress' 
+          : order.status,
+      };
+    }
+    return order; // It's already a legacy order
+  };
+
+  if (displayOrders.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
@@ -37,16 +77,23 @@ export default function OrderHistoryScreen() {
           <Text style={styles.headerTitle}>Order History</Text>
         </View>
         
-        <View style={styles.emptyContainer}>
-          <MaterialIcons name="receipt-long" size={80} color="#ddd" />
-          <Text style={styles.emptyText}>No order history yet</Text>
-          <TouchableOpacity 
-            style={styles.browseButton}
-            onPress={() => router.push('/(tabs)/home')}
-          >
-            <Text style={styles.browseButtonText}>Browse Chefs</Text>
-          </TouchableOpacity>
-        </View>
+        {isLoading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#FF4B3E" />
+            <Text style={styles.loadingText}>Loading orders...</Text>
+          </View>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <MaterialIcons name="receipt-long" size={80} color="#ddd" />
+            <Text style={styles.emptyText}>No order history yet</Text>
+            <TouchableOpacity 
+              style={styles.browseButton}
+              onPress={() => router.push('/(tabs)/home')}
+            >
+              <Text style={styles.browseButtonText}>Browse Chefs</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -60,9 +107,13 @@ export default function OrderHistoryScreen() {
         <Text style={styles.headerTitle}>Order History</Text>
       </View>
       
-      <ScrollView>
-        {orders.map((order) => (
-          <OrderCard key={order.id} order={order} />
+      <ScrollView 
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {displayOrders.map((order) => (
+          <OrderCard key={order.id} order={normalizeOrder(order)} />
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -182,6 +233,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 16,
   },
   orderCard: {
     margin: 12,

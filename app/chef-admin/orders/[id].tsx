@@ -18,6 +18,7 @@ import {
 } from 'react-native-responsive-screen';
 
 import ScreenHeader from '../components/ScreenHeader';
+import { getOrderById, updateOrderStatus } from '@/services/firestore'; // Assuming these functions are defined in services/firestore
 
 // Define OrderStatus type for consistency
 type OrderStatus = 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
@@ -122,24 +123,70 @@ const mockOrderDetails: MockOrderDetails = {
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id && typeof id === 'string') {
-      if (mockOrderDetails[id]) {
-        // Valid order ID
-        setOrder(mockOrderDetails[id]);
-      } else {
-        // Invalid order ID
-        Alert.alert('Error', 'Order not found');
-        router.back();
-      }
+      // Try to fetch from Firestore first
+      getOrderById(id)
+        .then(firestoreOrder => {
+          if (firestoreOrder) {
+            // Convert Firestore order to our local format
+            setOrder({
+              id: firestoreOrder.id,
+              customerName: firestoreOrder.customerName,
+              address: firestoreOrder.address,
+              phone: firestoreOrder.phone || '',
+              items: firestoreOrder.items,
+              subtotal: firestoreOrder.subtotal,
+              deliveryFee: firestoreOrder.deliveryFee,
+              total: firestoreOrder.total,
+              status: firestoreOrder.status,
+              orderTime: firestoreOrder.createdAt.toDate ? 
+                firestoreOrder.createdAt.toDate().toISOString() : 
+                firestoreOrder.createdAt.toString(),
+              notes: firestoreOrder.notes || '',
+            });
+          } else if (mockOrderDetails[id]) {
+            // Fall back to mock data
+            setOrder(mockOrderDetails[id]);
+          } else {
+            // Not found anywhere
+            Alert.alert('Error', 'Order not found');
+            router.back();
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching order:', error);
+          
+          // Fall back to mock data
+          if (mockOrderDetails[id]) {
+            setOrder(mockOrderDetails[id]);
+          } else {
+            Alert.alert('Error', 'Failed to load order details');
+            router.back();
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [id]);
 
-  const updateStatus = (newStatus: OrderStatus) => {
-    if (order) {
+  const updateStatus = async (newStatus: OrderStatus) => {
+    if (!order) return;
+    
+    try {
+      // Update in Firestore
+      await updateOrderStatus(order.id, newStatus);
+      
+      // Update local state
       setOrder({...order, status: newStatus});
+      
       Alert.alert('Status Updated', `Order status changed to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      Alert.alert('Error', 'Failed to update order status');
     }
   };
 
@@ -165,7 +212,7 @@ export default function OrderDetailScreen() {
     }
   };
 
-  if (!order) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <ScreenHeader
@@ -175,6 +222,21 @@ export default function OrderDetailScreen() {
         />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading order details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!order) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScreenHeader
+          title="Order Details"
+          showBackButton={true}
+          onBackPress={() => router.push('/chef-admin/orders')}
+        />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Order not found</Text>
         </View>
       </SafeAreaView>
     );
