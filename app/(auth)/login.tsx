@@ -67,7 +67,7 @@ export default function Login() {
         signInWithCredential(auth, credential)
           .then((result) => {
             console.log("Google sign in successful");
-            router.replace('/(tabs)');
+            router.replace('/(tabs)/home');  // Update to include /home
           })
           .catch((error) => {
             console.error("Error signing in with Google:", error);
@@ -103,11 +103,12 @@ export default function Login() {
     setLoading(true);
     try {
       const success = await login(email, password, 'customer');
-      if (!success) {
+      if (success) {
+        // Add explicit navigation to home screen
+        router.replace('/(tabs)/home');
+      } else {
         Alert.alert('Login Failed', 'Invalid email or password');
       }
-      // The navigation happens automatically in the login function
-      // so we don't need to call router.replace here
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'An error occurred during login. Please try again.');
     } finally {
@@ -128,6 +129,7 @@ export default function Login() {
     router.push('/signup');
   };
 
+ 
   const goToForgotPassword = () => {
     router.push('/forgot-password');
   };
@@ -194,7 +196,7 @@ export default function Login() {
           {/* Login Button */}
           <TouchableOpacity 
             style={styles.loginButton} 
-            onPress={handleLogin}
+            onPress={handleLogin }
             disabled={loading}
           >
             {loading ? (
