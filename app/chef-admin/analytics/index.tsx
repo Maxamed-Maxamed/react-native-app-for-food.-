@@ -72,7 +72,7 @@ export default function AnalyticsDashboardScreen() {
       <ScreenHeader
         title="Analytics Dashboard"
         showBackButton={true}
-        onBackPress={() => router.push('/chef-admin/dashboard')}
+        onBackPress={() => router.push('/chef-admin/dashboard/dashboard')}
       />
 
       <ScrollView style={styles.content}>

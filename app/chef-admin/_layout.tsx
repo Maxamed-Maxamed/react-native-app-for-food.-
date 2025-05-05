@@ -12,21 +12,21 @@ export default function ChefAdminLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="login"
+        name="auth/login"
         options={{
           title: "Chef Login",
           headerShown: false,
         }}
       />
       <Stack.Screen
-        name="signup"
+        name="auth/signup"
         options={{
           title: "Chef Signup",
           headerShown: false,
         }}
       />
       <Stack.Screen
-        name="dashboard"
+        name="dashboard/dashboard"
         options={{
           title: "Dashboard",
           headerShown: false,

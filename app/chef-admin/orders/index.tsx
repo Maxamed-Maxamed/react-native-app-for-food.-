@@ -119,7 +119,7 @@ export default function OrdersScreen() {
         title="Orders"
         subtitle="Manage your orders"
         showBackButton={true}
-        onBackPress={() => router.push('/chef-admin/dashboard')}
+        onBackPress={() => router.push('/chef-admin/dashboard/dashboard')}
       />
 
       <FlatList

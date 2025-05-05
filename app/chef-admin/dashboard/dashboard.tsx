@@ -54,7 +54,7 @@ export default function ChefDashboardScreen() {
           text: 'Logout',
           onPress: async () => {
             await logout();
-            router.replace('/chef-admin/login');
+            router.replace('/chef-admin/auth/login');
           },
         },
       ]

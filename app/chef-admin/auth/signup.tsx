@@ -22,35 +22,65 @@ import {
 } from 'react-native-responsive-screen';
 import { useAuth } from '@/context/AuthContext';
 
-export default function ChefLoginScreen() {
+export default function ChefSignupScreen() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { signup } = useAuth();
   
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+  const handleSignup = async () => {
+    // Form validation
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert('Error', 'All fields are required');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+    
+    // Password strength validation (basic)
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      // Try to login with 'chef' role
-      const success = await login(email, password, 'chef');
+      // Register as 'chef' role
+      const success = await signup(email, password, name, 'chef');
       
       if (success) {
-        // Navigation will be handled in the AuthContext
-        router.replace('/chef-admin/dashboard');
+        Alert.alert(
+          'Account Created',
+          'Your chef account has been created successfully',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/chef-admin/auth/login'),
+            }
+          ]
+        );
       } else {
-        Alert.alert('Login Failed', 'Invalid email or password for chef account');
+        Alert.alert('Registration Failed', 'Could not create account. Email may be in use already.');
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'An error occurred during login');
+      Alert.alert('Error', 'An error occurred during registration');
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +97,7 @@ export default function ChefLoginScreen() {
           <View style={styles.headerContainer}>
             <TouchableOpacity 
               style={styles.backButton}
-              onPress={() => router.push('/(tabs)/home')}
+              onPress={() => router.back()}
             >
               <MaterialIcons name="arrow-back" size={wp('6%')} color="#333" />
             </TouchableOpacity>
@@ -83,8 +113,20 @@ export default function ChefLoginScreen() {
           </View>
 
           <View style={styles.formContainer}>
-            <Text style={styles.title}>Login</Text>
-            <Text style={styles.subtitle}>Sign in to manage your menu and orders</Text>
+            <Text style={styles.title}>Sign Up</Text>
+            <Text style={styles.subtitle}>Create a chef account to manage your menu</Text>
+            
+            <View style={styles.inputContainer}>
+              <MaterialIcons name="person" size={wp('5%')} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                editable={!isLoading}
+              />
+            </View>
             
             <View style={styles.inputContainer}>
               <MaterialIcons name="email" size={wp('5%')} color="#666" style={styles.inputIcon} />
@@ -122,47 +164,50 @@ export default function ChefLoginScreen() {
               </TouchableOpacity>
             </View>
             
-            <TouchableOpacity 
-              style={styles.forgotPassword}
-              disabled={isLoading}
-              onPress={() => Alert.alert('Forgot Password', 'Please contact support to reset your password')}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            <View style={styles.inputContainer}>
+              <MaterialIcons name="lock" size={wp('5%')} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={styles.eyeIcon}
+                disabled={isLoading}
+              >
+                <MaterialIcons 
+                  name={showConfirmPassword ? "visibility" : "visibility-off"} 
+                  size={wp('5%')} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+            </View>
             
             <TouchableOpacity 
-              style={[styles.loginButton, isLoading && styles.disabledButton]}
-              onPress={handleLogin}
+              style={[styles.signupButton, isLoading && styles.disabledButton]}
+              onPress={handleSignup}
               disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Login</Text>
+                <Text style={styles.signupButtonText}>Create Account</Text>
               )}
             </TouchableOpacity>
             
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account? </Text>
               <TouchableOpacity 
-                onPress={() => router.push('/chef-admin/signup')}
+                onPress={() => router.push('/chef-admin/auth/login')}
                 disabled={isLoading}
               >
-                <Text style={styles.registerLink}>Register</Text>
+                <Text style={styles.loginLink}>Login</Text>
               </TouchableOpacity>
             </View>
-            
-            {/* Use demo account for testing */}
-            <TouchableOpacity 
-              style={styles.demoAccount}
-              onPress={() => {
-                setEmail('chef@example.com');
-                setPassword('chefpass');
-              }}
-              disabled={isLoading}
-            >
-              <Text style={styles.demoAccountText}>Use Demo Account</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -173,7 +218,7 @@ export default function ChefLoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffffff',
   },
   scrollContent: {
     flexGrow: 1,
@@ -188,8 +233,8 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: hp('5%'),
-    marginBottom: hp('5%'),
+    marginTop: hp('3%'),
+    marginBottom: hp('3%'),
   },
   logo: {
     width: wp('20%'),
@@ -238,54 +283,35 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: wp('2%'),
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: hp('4%'),
-  },
-  forgotPasswordText: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: wp('3.5%'),
-    color: '#FF4B3E',
-  },
-  loginButton: {
+  signupButton: {
     backgroundColor: '#FF4B3E',
     borderRadius: wp('3%'),
     paddingVertical: hp('1.8%'),
     alignItems: 'center',
     marginBottom: hp('3%'),
+    marginTop: hp('2%'),
   },
   disabledButton: {
     backgroundColor: '#FFB5B0',
   },
-  loginButtonText: {
+  signupButtonText: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: wp('4.5%'),
     color: '#fff',
   },
-  registerContainer: {
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: hp('3%'),
   },
-  registerText: {
+  loginText: {
     fontFamily: 'Poppins_400Regular',
     fontSize: wp('3.5%'),
     color: '#666',
   },
-  registerLink: {
+  loginLink: {
     fontFamily: 'Poppins_600SemiBold',
     fontSize: wp('3.5%'),
     color: '#FF4B3E',
   },
-  demoAccount: {
-    alignItems: 'center',
-    paddingVertical: hp('1%'),
-  },
-  demoAccountText: {
-    fontFamily: 'Poppins_400Regular',
-    fontSize: wp('3.5%'),
-    color: '#666',
-    textDecorationLine: 'underline',
-  }
 });

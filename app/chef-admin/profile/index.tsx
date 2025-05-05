@@ -99,7 +99,7 @@ export default function ChefProfileScreen() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/chef-admin/login');
+    router.replace('/chef-admin/auth/login');
   };
 
   const handleEditProfile = () => {
@@ -113,7 +113,8 @@ export default function ChefProfileScreen() {
       <ScreenHeader
         title="Profile"
         showBackButton={true}
-        onBackPress={() => router.push('/chef-admin/dashboard')}
+        onBackPress={() => router.push('/chef-admin/dashboard/dashboard')}
+        
       />
       
       <ScrollView 

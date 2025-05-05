@@ -87,7 +87,7 @@ export default function MenuScreen() {
         title="Menu"
         subtitle="Manage your menu items"
         showBackButton={true}
-        onBackPress={() => router.push('/chef-admin/dashboard')}
+        onBackPress={() => router.push('/chef-admin/dashboard/dashboard')}
         rightComponent={
           <TouchableOpacity style={styles.addButton} onPress={handleAddNewItem}>
             <MaterialIcons name="add" size={wp('6%')} color="#fff" />

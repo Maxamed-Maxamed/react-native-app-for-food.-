@@ -60,7 +60,7 @@ export default function StartScreen() {
 
             <TouchableOpacity
               style={styles.optionButton}
-              onPress={() => router.push('/chef-admin/login')}
+              onPress={() => router.push('/chef-admin/auth/login')}
             >
               <View style={styles.optionContent}>
                 <View style={styles.iconContainer}>
