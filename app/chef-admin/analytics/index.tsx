@@ -38,21 +38,32 @@ interface AnalyticsData {
 export default function AnalyticsDashboardScreen() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  // Initialize with proper typing - replace null with AnalyticsData | null
+  // Initialize with proper typing
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
   useEffect(() => {
+    // Check if user is authenticated and has the right role
+    if (!user || user.role !== 'chef') {
+      router.replace('/chef-admin/login');
+      return;
+    }
+
     // In a real app, fetch analytics data from your backend
     // For now, we're using mock data
     setTimeout(() => {
       setAnalyticsData(getMockAnalyticsData());
       setIsLoading(false);
     }, 1000);
-  }, []);
+  }, [user]); // Add user as a dependency
 
+  // Render loading state until we know if user is authenticated
   if (!user || user.role !== 'chef') {
-    router.replace('/chef-admin/login');
-    return null;
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <ActivityIndicator size="large" color="#FF4B3E" style={styles.loader} />
+      </SafeAreaView>
+    );
   }
 
   return (
