@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -26,31 +27,72 @@ import {
   MenuItem,
   MENU_CATEGORIES,
   DIETARY_OPTIONS,
-  mockMenuItems,
-  generateMenuItemId,
   validateMenuItem,
 } from '@/utils/menuHelpers';
+import { getDoc, doc } from 'firebase/firestore';
+import { db as firestore } from '@/services/firebase';
+import { addMenuItem, updateMenuItem } from '@/services/menuService';
+import { useAuth } from '@/context/AuthContext';
 
 export default function EditMenuItemScreen() {
   const { id } = useLocalSearchParams();
-  const isEditing = !!id;
-
-  // Find the existing menu item if editing
-  const existingItem = isEditing
-    ? mockMenuItems.find((item) => item.id === id)
-    : null;
+  const isEditing = !!id && typeof id === 'string';
+  const { user } = useAuth();
 
   // State for form fields
-  const [name, setName] = useState(existingItem?.name || '');
-  const [description, setDescription] = useState(existingItem?.description || '');
-  const [price, setPrice] = useState(existingItem?.price?.toString() || '');
-  const [image, setImage] = useState(existingItem?.image || null);
-  const [category, setCategory] = useState(existingItem?.category || '');
-  const [dietary, setDietary] = useState<string[]>(existingItem?.dietary || []);
-  const [available, setAvailable] = useState(existingItem?.available ?? true);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [image, setImage] = useState<any>(null);
+  const [category, setCategory] = useState('');
+  const [dietary, setDietary] = useState<string[]>([]);
+  const [available, setAvailable] = useState(true);
+  
+  // Loading states
+  const [loading, setLoading] = useState(isEditing);
+  const [saving, setSaving] = useState(false);
+
+  // Fetch existing item if editing
+  useEffect(() => {
+    if (isEditing && typeof id === 'string') {
+      fetchMenuItem(id);
+    }
+  }, [id]);
+
+  const fetchMenuItem = async (itemId: string) => {
+    try {
+      setLoading(true);
+      const docRef = doc(firestore, 'menuItems', itemId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data() as MenuItem;
+        setName(data.name);
+        setDescription(data.description);
+        setPrice(data.price.toString());
+        setImage(data.image);
+        setCategory(data.category);
+        setDietary(data.dietary || []);
+        setAvailable(data.available);
+      } else {
+        Alert.alert('Error', 'Menu item not found');
+        router.back();
+      }
+    } catch (error) {
+      console.error('Error fetching menu item:', error);
+      Alert.alert('Error', 'Failed to load menu item details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle save action
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!user || !user.id) {
+      Alert.alert('Error', 'You must be logged in to save menu items');
+      return;
+    }
+
     // Parse price as a number
     const priceNumber = parseFloat(price);
 
@@ -74,17 +116,33 @@ export default function EditMenuItemScreen() {
       return;
     }
 
-    // In a real app, this would save to your backend
-    Alert.alert(
-      'Success',
-      isEditing ? 'Menu item updated successfully' : 'New menu item created',
-      [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]
-    );
+    try {
+      setSaving(true);
+
+      if (isEditing && typeof id === 'string') {
+        // Update existing item
+        await updateMenuItem(id, menuItem);
+      } else {
+        // Create new item
+        await addMenuItem(menuItem as Omit<MenuItem, 'id'>, user.id);
+      }
+
+      Alert.alert(
+        'Success',
+        isEditing ? 'Menu item updated successfully' : 'New menu item created',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error saving menu item:', error);
+      Alert.alert('Error', 'Failed to save menu item. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Toggle a dietary restriction
@@ -96,6 +154,23 @@ export default function EditMenuItemScreen() {
     }
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <ScreenHeader
+          title={isEditing ? 'Edit Menu Item' : 'Add New Item'}
+          showBackButton={true}
+          onBackPress={() => router.back()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF4B3E" />
+          <Text style={styles.loadingText}>Loading menu item details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
@@ -103,6 +178,7 @@ export default function EditMenuItemScreen() {
       <ScreenHeader
         title={isEditing ? 'Edit Menu Item' : 'Add New Item'}
         showBackButton={true}
+        onBackPress={() => router.back()}
       />
       
       <KeyboardAvoidingView
@@ -121,7 +197,7 @@ export default function EditMenuItemScreen() {
               onImageSelected={(selectedImage) => setImage(selectedImage)}
             />
           </View>
-          
+
           <View style={styles.formSection}>
             <Text style={styles.sectionTitle}>Basic Information</Text>
             
@@ -230,18 +306,31 @@ export default function EditMenuItemScreen() {
       </KeyboardAvoidingView>
       
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+        <TouchableOpacity 
+          style={styles.cancelButton} 
+          onPress={() => router.back()}
+          disabled={saving}
+        >
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save</Text>
+        <TouchableOpacity 
+          style={[styles.saveButton, saving && styles.disabledButton]} 
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
+// Styles unchanged
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -391,4 +480,18 @@ const styles = StyleSheet.create({
     fontSize: wp('4%'),
     color: '#fff',
   },
+  disabledButton: {
+    backgroundColor: '#FFB5B0',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: wp('4%'),
+    color: '#666',
+    marginTop: hp('2%'),
+  }
 });

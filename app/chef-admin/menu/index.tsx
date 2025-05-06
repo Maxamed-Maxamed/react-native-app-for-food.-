@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,30 +21,61 @@ import {
 import ScreenHeader from '../components/ScreenHeader';
 import MenuItemCard from './components/MenuItemCard';
 import CategoryFilter from './components/CategoryFilter';
-import { MenuItem, mockMenuItems } from '@/utils/menuHelpers';
+import { MenuItem } from '@/utils/menuHelpers';
+import { getChefMenuItems, toggleMenuItemAvailability, deleteMenuItem } from '@/services/menuService';
+import { useAuth } from '@/context/AuthContext';
 
 export default function MenuScreen() {
-  const [items, setItems] = useState<MenuItem[]>(mockMenuItems);
+  const [items, setItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   // Filter items by selected category
   const filteredItems = selectedCategory
     ? items.filter((item) => item.category === selectedCategory)
     : items;
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    // In a real app, you would fetch from an API
-    setTimeout(() => {
+  // Load menu items when component mounts
+  useEffect(() => {
+    if (user?.id) {
+      loadMenuItems();
+    }
+  }, [user]);
+
+  const loadMenuItems = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const menuItems = await getChefMenuItems(user.id);
+      setItems(menuItems);
+    } catch (error) {
+      console.error('Failed to load menu items:', error);
+      Alert.alert('Error', 'Failed to load menu items. Please try again.');
+    } finally {
+      setLoading(false);
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
-  const handleToggleAvailability = (id: string, newValue: boolean) => {
-    setItems(
-      items.map((item) => (item.id === id ? { ...item, available: newValue } : item))
-    );
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadMenuItems();
+  };
+
+  const handleToggleAvailability = async (id: string, newValue: boolean) => {
+    try {
+      await toggleMenuItemAvailability(id, newValue);
+      // Update local state to reflect the change immediately
+      setItems(
+        items.map((item) => (item.id === id ? { ...item, available: newValue } : item))
+      );
+    } catch (error) {
+      console.error('Failed to update item availability:', error);
+      Alert.alert('Error', 'Failed to update item availability. Please try again.');
+    }
   };
 
   const handleEditPress = (item: MenuItem) => {
@@ -66,8 +98,15 @@ export default function MenuScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setItems(items.filter((item) => item.id !== id));
+          onPress: async () => {
+            try {
+              await deleteMenuItem(id);
+              // Update local state after successful deletion
+              setItems(items.filter((item) => item.id !== id));
+            } catch (error) {
+              console.error('Failed to delete menu item:', error);
+              Alert.alert('Error', 'Failed to delete menu item. Please try again.');
+            }
           },
         },
       ]
@@ -100,36 +139,43 @@ export default function MenuScreen() {
         onSelectCategory={setSelectedCategory}
       />
 
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <MenuItemCard
-            item={item}
-            onToggleAvailability={handleToggleAvailability}
-            onEditPress={handleEditPress}
-            onDeletePress={handleDeletePress}
-          />
-        )}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <MaterialIcons name="restaurant-menu" size={wp('15%')} color="#ccc" />
-            <Text style={styles.emptyText}>No menu items found</Text>
-            <Text style={styles.emptySubtext}>
-              {selectedCategory
-                ? `You don't have any items in this category`
-                : `Your menu is empty. Add some delicious dishes!`}
-            </Text>
-            <TouchableOpacity style={styles.addFirstButton} onPress={handleAddNewItem}>
-              <Text style={styles.addFirstButtonText}>Add Your First Item</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF4B3E" />
+          <Text style={styles.loadingText}>Loading menu items...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <MenuItemCard
+              item={item}
+              onToggleAvailability={handleToggleAvailability}
+              onEditPress={handleEditPress}
+              onDeletePress={handleDeletePress}
+            />
+          )}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="restaurant-menu" size={wp('15%')} color="#ccc" />
+              <Text style={styles.emptyText}>No menu items found</Text>
+              <Text style={styles.emptySubtext}>
+                {selectedCategory
+                  ? `You don't have any items in this category`
+                  : `Your menu is empty. Add some delicious dishes!`}
+              </Text>
+              <TouchableOpacity style={styles.addFirstButton} onPress={handleAddNewItem}>
+                <Text style={styles.addFirstButtonText}>Add Your First Item</Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -183,4 +229,15 @@ const styles = StyleSheet.create({
     fontSize: wp('3.5%'),
     color: '#fff',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: wp('4%'),
+    color: '#666',
+    marginTop: hp('2%'),
+  }
 });

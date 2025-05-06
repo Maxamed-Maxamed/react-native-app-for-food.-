@@ -26,6 +26,9 @@ export interface MenuItem {
   category: string;
   dietary?: string[];
   available: boolean;
+  chefId?: string;     // ID of the chef who created this item
+  createdAt?: Date;    // When the item was created
+  updatedAt?: Date;    // When the item was last updated
 }
 
 // Generate a unique ID for new menu items
