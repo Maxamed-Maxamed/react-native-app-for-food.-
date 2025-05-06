@@ -47,7 +47,7 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       await signOutUser();
-      router.replace('/(auth)/login');
+      router.replace('/');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to logout');
     } finally {
